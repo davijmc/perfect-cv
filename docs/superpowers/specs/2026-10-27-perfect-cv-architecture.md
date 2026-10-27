@@ -53,7 +53,7 @@ perfect-cv/
 │   ├── settings/                     # Formulário de chaves, seleção de modelo, Ping test
 │   ├── profile/                      # Seções do perfil (Pessoal, Exp, Edu, Skills, Projetos)
 │   ├── generator/                    # Wizard de geração, seleção de vaga/modo/profundidade
-│   └── resume-view/                  # Folha A4 interativa, editor inline, botões de exportação
+│   └── resume-view/                  # Folha A4 interativa, carrossel de 5 estilos, editor inline, exportação PDF
 ├── lib/
 │   ├── ai/                           # Adaptador Universal de IA
 │   │   ├── client.ts                 # Fábrica de instâncias dos provedores
@@ -189,6 +189,7 @@ export interface GeneratedResume {
   title: string; // Ex: "Tech Lead - Nubank"
   mode: 'generic' | 'job_specific' | 'from_scratch';
   depth: 'lean' | 'detailed';
+  templateId: 'modern-minimal' | 'executive-slate' | 'tech-charcoal' | 'classic-serif' | 'nordic-warm';
   targetRole?: string;
   targetJobDetails?: {
     company?: string;
@@ -231,14 +232,44 @@ export interface GeneratedResume {
 
 ### 5.4 Editor & Preview A4
 * **Canvas A4**: Exibição fiel ao formato físico com estilos de impressão calibrados.
+* **Carrossel de Estilos Integrado**: Logo acima do canvas A4, um carrossel visual (`TemplateCarousel`) permite deslizar e alternar entre 5 estilos de formatação com 1 clique, atualizando imediatamente o visual do documento sem perder edições de texto.
 * **Edição Inline**: O usuário clica e edita qualquer texto no próprio currículo gerado.
 * **Ações**:
-  * **Baixar PDF**: Impressão vetorial limpa e selecionável.
+  * **Baixar PDF**: Impressão vetorial limpa e selecionável baseada no template escolhido.
   * **Copiar Markdown / Baixar JSON**: Para portfólios e formulários de candidatura.
-  * **Salvar na Biblioteca**: Persiste o currículo gerado em `data/resumes/[id].json`.
+  * **Salvar na Biblioteca**: Persiste o currículo gerado em `data/resumes/[id].json` com o `templateId` selecionado.
 
-### 5.5 Aba da Biblioteca de Currículos
-* Listagem em cards com título, data, vaga/cargo alvo e badges de modo/profundidade.
+### 5.5 Catálogo de Estilos de Formatação (5 Variações no Carrossel)
+Todos os estilos foram concebidos com rigor estético, tipografia harmoniosa, contrastes calibrados e foco em compatibilidade ATS:
+
+1. **Modern Minimalist (`modern-minimal`)**:
+   * *Estilo visual*: Limpo, ultra focado em conteúdo e alta legibilidade.
+   * *Paleta*: Fundo branco puro (`#ffffff`), tipografia principal em grafite profundo (`#0f172a`), títulos em `slate-800` com divisores horizontais sutis em `slate-200`.
+   * *Tipografia*: Sans-serif moderna e geométrica (Inter).
+   * *Estrutura*: Coluna única linear, hierarquia de títulos clara, excelente pontuação mecânica em robôs ATS.
+2. **Executive Slate (`executive-slate`)**:
+   * *Estilo visual*: Duas colunas assimétricas corporativas e elegantes.
+   * *Paleta*: Fundo do corpo branco com barra lateral suave em `slate-50` / `zinc-100` e divisória sutil. Acentos em azul-marinho executivo (`#1e3a8a` / `#0f2744`) nos cabeçalhos e cargos.
+   * *Tipografia*: Sans-serif refinada e equilibrada (Inter).
+   * *Estrutura*: Barra lateral (30%) com contatos, skills agrupadas e idiomas; coluna principal (70%) com resumo, histórico profissional e educação.
+3. **Tech Charcoal (`tech-charcoal`)**:
+   * *Estilo visual*: Cabeçalho escuro sofisticado e tags destacadas, ideal para engenharia e tecnologia.
+   * *Paleta*: Cabeçalho superior com fundo carvão/grafite escuro (`#18181b` / `#0f172a`) e tipografia contrastante; corpo branco limpo.
+   * *Tipografia*: Sans-serif técnica, com tags de competências em caixas discretas (`bg-slate-100 text-slate-800`).
+   * *Estrutura*: Bloco superior forte com nome e contatos, seguido por narrativa linear de experiências com tecnologias em evidência.
+4. **Classic Serif (`classic-serif`)**:
+   * *Estilo visual*: Atemporal, acadêmico e refinado (estilo Ivy League / Wall Street).
+   * *Paleta*: Fundo branco marfim suave (`#fafafa`), tipografia em preto suave (`#111827`) e divisores clássicos finos.
+   * *Tipografia*: Cabeçalho e títulos de seção em fonte serifada elegante (Merriweather / Georgia), corpo em serif ou sans legível.
+   * *Estrutura*: Cabeçalho centralizado clássico, seções com títulos elegantes em versalete/maiúsculas, ideal para áreas jurídicas, consultorias e alta gestão.
+5. **Nordic Warm (`nordic-warm`)**:
+   * *Estilo visual*: Estética escandinava contemporânea, quente e acolhedora.
+   * *Paleta*: Fundo em tom areia/off-white sutil (`#fdfbf7` / `stone-50`), tipografia em café espresso/stone-900 (`#1c1917`), divisores e acentos em tom terra/oliva sutil (`#57534e`).
+   * *Tipografia*: Sans-serif humanista com espaçamento confortável.
+   * *Estrutura*: Layout arejado e amigável, excelente para designers, gerentes de produto e profissionais criativos que valorizam sutileza e requinte.
+
+### 5.6 Aba da Biblioteca de Currículos
+* Listagem em cards com título, data, vaga/cargo alvo, badge do template visual utilizado e badges de modo/profundidade.
 * Ações em cada card: **Abrir no Editor**, **Duplicar**, **Exportar PDF** e **Excluir**.
 
 ---
