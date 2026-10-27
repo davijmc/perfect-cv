@@ -26,7 +26,14 @@ export const ProvidersMapSchema = z.object({
   groq: ProviderConfigSchema.default({ apiKey: '', model: 'llama-3.3-70b-versatile', baseUrl: 'https://api.groq.com/openai/v1' }),
   ollama: ProviderConfigSchema.default({ apiKey: '', model: 'llama3.2', baseUrl: 'http://localhost:11434/v1' }),
   omniRoute: ProviderConfigSchema.default({ apiKey: '', model: '', baseUrl: 'https://openrouter.ai/api/v1' }),
-}).default({});
+}).default({
+  gemini: { apiKey: '', model: 'gemini-1.5-flash', baseUrl: '' },
+  openai: { apiKey: '', model: 'gpt-4o', baseUrl: '' },
+  anthropic: { apiKey: '', model: 'claude-3-5-sonnet-latest', baseUrl: '' },
+  groq: { apiKey: '', model: 'llama-3.3-70b-versatile', baseUrl: 'https://api.groq.com/openai/v1' },
+  ollama: { apiKey: '', model: 'llama3.2', baseUrl: 'http://localhost:11434/v1' },
+  omniRoute: { apiKey: '', model: '', baseUrl: 'https://openrouter.ai/api/v1' },
+});
 
 // Configuração Geral da Aplicação (salva em data/config.json)
 export const AppConfigSchema = z.object({
@@ -108,13 +115,25 @@ export const LanguageItemSchema = z.object({
 });
 export type LanguageItem = z.infer<typeof LanguageItemSchema>;
 
-// Perfil Profissional Mestre Completo (salvo em data/profile.json)
 export const UserProfileSchema = z.object({
-  personalInfo: PersonalInfoSchema.default({}),
+  personalInfo: PersonalInfoSchema.default({
+    fullName: '',
+    title: '',
+    email: '',
+    phone: '',
+    location: '',
+    linkedinUrl: '',
+    githubUrl: '',
+    portfolioUrl: '',
+  }),
   summary: z.string().default(''),
   experiences: z.array(ExperienceItemSchema).default([]),
   education: z.array(EducationItemSchema).default([]),
-  skills: SkillsSchema.default({}),
+  skills: SkillsSchema.default({
+    technical: [],
+    toolsAndCloud: [],
+    softSkills: [],
+  }),
   projects: z.array(ProjectItemSchema).default([]),
   certifications: z.array(CertificationItemSchema).default([]),
   languages: z.array(LanguageItemSchema).default([]),

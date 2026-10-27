@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
-import { generateText, LanguageModelV1 } from 'ai';
+import { generateText, LanguageModel } from 'ai';
 import { AIProvider, AppConfig } from '@/lib/ai/schemas';
 
 /**
@@ -38,7 +38,7 @@ export function resolveModelId(provider: AIProvider, model?: string): string {
 /**
  * Cria a instância do modelo de linguagem de acordo com a configuração ativa
  */
-export function getAIModelInstance(config: AppConfig): LanguageModelV1 {
+export function getAIModelInstance(config: AppConfig): any {
   const provider = config.activeProvider;
   const providerCfg = config.providers[provider] || { apiKey: '', model: '', baseUrl: '' };
   const modelId = resolveModelId(provider, providerCfg.model);
@@ -110,7 +110,7 @@ export async function testProviderConnection(
 ): Promise<{ success: boolean; message: string }> {
   try {
     const modelId = resolveModelId(provider, model);
-    let modelInstance: LanguageModelV1;
+    let modelInstance: any;
 
     if (provider === 'gemini') {
       if (!apiKey) throw new Error('Chave de API do Gemini não informada.');
@@ -149,7 +149,6 @@ export async function testProviderConnection(
     const result = await generateText({
       model: modelInstance,
       prompt: 'Responda apenas com a palavra: OK',
-      maxTokens: 5,
     });
 
     if (result && result.text) {
