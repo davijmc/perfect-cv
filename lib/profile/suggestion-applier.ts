@@ -35,8 +35,7 @@ export function applySuggestionToProfile(
 
     case 'improve_summary':
     case 'grammar_style': {
-      if (suggestion.targetField === 'personalInfo.summary' || suggestion.targetField === 'summary') {
-        updated.personalInfo.summary = finalValue;
+      if (suggestion.targetField === 'summary' || suggestion.targetField === 'personalInfo.summary') {
         updated.summary = finalValue;
       } else if (
         suggestion.targetField === 'experiences.highlight' &&
@@ -103,8 +102,7 @@ export function revertSuggestionFromProfile(
 
     case 'improve_summary':
     case 'grammar_style': {
-      if (suggestion.targetField === 'personalInfo.summary' || suggestion.targetField === 'summary') {
-        updated.personalInfo.summary = suggestion.originalValue || '';
+      if (suggestion.targetField === 'summary' || suggestion.targetField === 'personalInfo.summary') {
         updated.summary = suggestion.originalValue || '';
       } else if (
         suggestion.targetField === 'experiences.highlight' &&

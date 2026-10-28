@@ -29,7 +29,7 @@ describe('Profile Suggestions Schemas', () => {
     expect(parsed.success).toBe(true);
     if (parsed.success) {
       expect(parsed.data.status).toBe('pending');
-      expect(parsed.data.originalValue).toBe('');
+      expect(parsed.data.originalValue).toBeUndefined();
     }
   });
 

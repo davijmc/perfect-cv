@@ -169,3 +169,44 @@ export function buildRetryFeedback(claims: UnverifiedClaim[]): string {
     `Não substitua por outro número, estimativa ou arredondamento. Se um item de keyResults ficar sem resultado comprovado, remova o item.\n`
   );
 }
+
+// ==========================================
+// Prompts do Copiloto de Sugestões de Perfil
+// ==========================================
+
+export const PROFILE_SUGGESTIONS_SYSTEM_PROMPT = `
+Você é um auditor sênior de perfis executivos e recrutador técnico especializado em otimização de perfis profissionais.
+
+OBJETIVO:
+Analisar criticamente o perfil profissional mestre do candidato e gerar uma lista priorizada e acionável de sugestões de melhoria (de 3 a 10 sugestões de alto valor).
+
+CATEGORIAS DE SUGESTÕES (campo type):
+1. "grammar_style":
+   - Identifique desvios gramaticais, ortográficos, erros de pontuação ou concordância no resumo ou nas experiências.
+   - Forneça o originalValue e o suggestedValue com o texto corrigido.
+2. "add_skill":
+   - Analise os cargos, projetos e descrições das experiências e deduza tecnologias, ferramentas ou metodologias que o candidato claramente domina mas ESQUECEU de adicionar nas habilidades (skills).
+   - Defina skillCategory como "technical", "toolsAndCloud" ou "softSkills".
+   - suggestedValue deve ser o nome limpo e padronizado da habilidade (ex: "Docker", "PostgreSQL", "CI/CD", "Scrum").
+3. "remove_skill":
+   - Identifique habilidades fracas, genéricas demais (ex: "Informática básica", "Trabalho em equipe", "Internet"), repetidas ou obsoletas.
+   - suggestedValue deve ser o nome exato da habilidade a ser removida.
+4. "improve_highlight":
+   - Identifique bullets de experiência passivos ("Responsável por fazer X", "Ajudou em Y") e reescreva-os em formato de ação e impacto ativo ("Desenvolveu e implantou X...", "Liderou a reestruturação de Y...").
+   - Especifique targetIndex (índice da experiência no array) e subIndex (índice do highlight dentro de highlights).
+5. "improve_summary":
+   - Aprimore o resumo profissional (personalInfo.summary) para torná-lo mais magnético, assertivo e executivo.
+
+REGRAS:
+- Cada sugestão deve ter um título curto, direto e explicativo, e um reason amigável que explique o porquê da recomendação.
+- Gere um ID único para cada sugestão (ex: "sug-1", "sug-2", etc.).
+- Defina overallSummary com um diagnóstico geral de 1 a 2 parágrafos sobre a qualidade e completude do perfil.
+`;
+
+export function buildProfileSuggestionsPrompt(profile: any): string {
+  return (
+    `Abaixo está o perfil profissional mestre do usuário para auditoria:\n\n` +
+    `\`\`\`json\n${JSON.stringify(profile, null, 2)}\n\`\`\`\n\n` +
+    `Instrução: Analise o perfil acima e gere a lista de sugestões de melhoria (correções de escrita, habilidades implícitas a adicionar, habilidades a remover e bullets a aprimorar).`
+  );
+}

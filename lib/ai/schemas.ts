@@ -228,7 +228,7 @@ export const ProfileSuggestionItemSchema = z.object({
   targetField: z.string(),
   targetIndex: z.number().optional(),
   subIndex: z.number().optional(),
-  originalValue: z.string().optional().default(''),
+  originalValue: z.string().optional(),
   suggestedValue: z.string(),
   skillCategory: z.enum(['technical', 'toolsAndCloud', 'softSkills']).optional(),
   status: z.enum(['pending', 'accepted', 'rejected']).default('pending'),

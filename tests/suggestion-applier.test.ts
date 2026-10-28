@@ -88,7 +88,7 @@ describe('applySuggestionToProfile', () => {
     };
 
     const updated = applySuggestionToProfile(baseProfile, sug);
-    expect(updated.personalInfo.summary).toBe('Engenheiro de Software Backend focado em sistemas resilientes.');
+    expect(updated.summary).toBe('Engenheiro de Software Backend focado em sistemas resilientes.');
   });
 
   it('atualiza highlight de experiência pelo índice', () => {
@@ -122,9 +122,9 @@ describe('applySuggestionToProfile', () => {
     };
 
     const updated = applySuggestionToProfile(baseProfile, sug);
-    expect(updated.personalInfo.summary).toBe('Novo Resumo Proposto');
+    expect(updated.summary).toBe('Novo Resumo Proposto');
 
     const reverted = revertSuggestionFromProfile(updated, sug);
-    expect(reverted.personalInfo.summary).toBe('Desenvolvedor backend júnior.');
+    expect(reverted.summary).toBe('Desenvolvedor backend júnior.');
   });
 });
