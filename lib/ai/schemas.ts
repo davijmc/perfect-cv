@@ -207,3 +207,36 @@ export const GeneratedResumeSchema = z.object({
   unverifiedClaims: z.array(UnverifiedClaimSchema).default([]),
 });
 export type GeneratedResume = z.infer<typeof GeneratedResumeSchema>;
+
+// ==========================================
+// Copiloto de Sugestões de Edição do Perfil
+// ==========================================
+export const SuggestionTypeEnum = z.enum([
+  'grammar_style',
+  'add_skill',
+  'remove_skill',
+  'improve_highlight',
+  'improve_summary',
+]);
+export type SuggestionType = z.infer<typeof SuggestionTypeEnum>;
+
+export const ProfileSuggestionItemSchema = z.object({
+  id: z.string(),
+  type: SuggestionTypeEnum,
+  title: z.string(),
+  reason: z.string(),
+  targetField: z.string(),
+  targetIndex: z.number().optional(),
+  subIndex: z.number().optional(),
+  originalValue: z.string().optional().default(''),
+  suggestedValue: z.string(),
+  skillCategory: z.enum(['technical', 'toolsAndCloud', 'softSkills']).optional(),
+  status: z.enum(['pending', 'accepted', 'rejected']).default('pending'),
+});
+export type ProfileSuggestionItem = z.infer<typeof ProfileSuggestionItemSchema>;
+
+export const ProfileSuggestionsResponseSchema = z.object({
+  overallSummary: z.string().default(''),
+  suggestions: z.array(ProfileSuggestionItemSchema).default([]),
+});
+export type ProfileSuggestionsResponse = z.infer<typeof ProfileSuggestionsResponseSchema>;
