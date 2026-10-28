@@ -7,6 +7,8 @@ import {
   saveProfile 
 } from '@/lib/storage/fs-storage';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const photo = await getProfilePhoto();
