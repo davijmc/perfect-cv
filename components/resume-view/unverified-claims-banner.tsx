@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TriangleAlert, X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import type { UnverifiedClaim, UserProfile } from '@/lib/ai/schemas';
 
 interface UnverifiedClaimsBannerProps {
@@ -31,16 +31,16 @@ export function UnverifiedClaimsBanner({ claims, content, onDismiss }: Unverifie
   return (
     <div
       id="unverified-claims-banner"
-      role="alert"
-      className="no-print rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 shadow-sm animate-fadeIn"
+      role="status"
+      className="no-print rounded-2xl border border-indigo-200 bg-indigo-50/80 p-4 text-xs text-indigo-950 shadow-sm animate-fadeIn"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2.5">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
           <div>
-            <p className="font-bold">Encontramos números que não estão no seu perfil</p>
-            <p className="mt-0.5 text-amber-800">
-              Confirme ou edite estes trechos antes de exportar. Se o número for real, adicione-o ao seu perfil para que as próximas gerações possam usá-lo.
+            <p className="font-bold text-indigo-900">Métricas e resultados sugeridos pela IA para você revisar</p>
+            <p className="mt-0.5 text-indigo-800 leading-relaxed">
+              A IA formulou realizações e métricas de alto impacto contextualizadas nesta vaga. A responsabilidade pela veracidade é exclusivamente sua: revise e ajuste os valores diretamente no editor antes de exportar.
             </p>
           </div>
         </div>
@@ -48,7 +48,7 @@ export function UnverifiedClaimsBanner({ claims, content, onDismiss }: Unverifie
           type="button"
           id="dismiss-unverified-claims"
           onClick={onDismiss}
-          className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 font-semibold text-amber-800 transition-colors hover:bg-amber-100"
+          className="flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer"
           title="Dispensar aviso"
         >
           <X className="h-3.5 w-3.5" />

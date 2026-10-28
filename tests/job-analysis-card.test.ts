@@ -63,7 +63,7 @@ describe('JobAnalysisCard Component', () => {
     expect(html).toContain('Atuou 3 anos desenvolvendo SPAs em React e TS.');
   });
 
-  it('renderiza requisitos ausentes com aviso explícito de integridade', () => {
+  it('renderiza requisitos a integrar com aviso de adequação automática', () => {
     const html = renderToStaticMarkup(
       React.createElement(JobAnalysisCard, {
         analysis: sampleAnalysis,
@@ -71,9 +71,9 @@ describe('JobAnalysisCard Component', () => {
       })
     );
 
-    expect(html).toContain('Gaps / Requisitos Não Encontrados');
+    expect(html).toContain('Requisitos a Integrar');
     expect(html).toContain('Conhecimento em Docker e Kubernetes');
-    expect(html).toContain('A IA não inventará');
+    expect(html).toContain('Adequação Automática');
   });
 
   it('renderiza botão para adequar e gerar currículo', () => {

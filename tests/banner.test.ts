@@ -34,7 +34,7 @@ describe('UnverifiedClaimsBanner', () => {
       })
     );
     expect(html).toContain('no-print');
-    expect(html).toContain('Encontramos números que não estão no seu perfil');
+    expect(html).toContain('Métricas e resultados sugeridos pela IA para você revisar');
     expect(html).toContain('+R$ 50M de ROI gerado para clientes.');
     expect(html).toContain('50M');
     expect(html).toContain('Principais resultados · item 1');

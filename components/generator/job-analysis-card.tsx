@@ -123,22 +123,22 @@ export function JobAnalysisCard({
           )}
         </div>
 
-        {/* Coluna 2: Requisitos Não Encontrados / Gaps */}
-        <div className="border border-rose-100 bg-rose-50/40 rounded-xl p-4 space-y-3">
+        {/* Coluna 2: Requisitos a Integrar */}
+        <div className="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-rose-900 flex items-center gap-1.5">
-              <XCircle className="w-4 h-4 text-rose-600" />
-              Gaps / Requisitos Não Encontrados ({notSupported.length})
+            <h4 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              Requisitos a Integrar ({notSupported.length})
             </h4>
-            <span className="text-xs text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full font-medium">
-              Atenção
+            <span className="text-xs text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full font-medium">
+              Adequação IA
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-600 bg-white/80 border border-rose-100 rounded-lg p-2 flex items-start gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="text-[11px] text-slate-600 bg-white/90 border border-indigo-100 rounded-lg p-2.5 flex items-start gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
             <span>
-              <strong>Compromisso de fidelidade:</strong> A IA não inventará experiências para cobrir estes itens. O currículo focará nas suas competências reais transferíveis.
+              <strong>Adequação Automática:</strong> Ao gerar o currículo, a IA incorporará estas competências e realizações nas suas experiências para destacá-lo como o melhor candidato para esta vaga. Você poderá revisar e ajustar qualquer detalhe antes de baixar.
             </span>
           </div>
 

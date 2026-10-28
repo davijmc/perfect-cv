@@ -76,24 +76,8 @@ export async function POST(request: Request) {
     if (level === 'simple') {
       tailoredProfile.keyResults = [];
     }
-    let unverifiedClaims = findUnsourcedClaims(tailoredProfile, masterProfile);
-
-    // 4.1 Guarda de números: uma única regeneração com feedback explícito
-    if (unverifiedClaims.length > 0) {
-      try {
-        const retried = await generate(userPrompt + buildRetryFeedback(unverifiedClaims));
-        if (level === 'simple') {
-          retried.keyResults = [];
-        }
-        const retriedClaims = findUnsourcedClaims(retried, masterProfile);
-        if (retriedClaims.length <= unverifiedClaims.length) {
-          tailoredProfile = retried;
-          unverifiedClaims = retriedClaims;
-        }
-      } catch (retryError) {
-        console.warn('Regeneração da guarda de números falhou; mantendo primeira versão.', retryError);
-      }
-    }
+    // Identifica números sugeridos pela IA para destaque amigável de revisão pelo usuário no editor
+    const unverifiedClaims = findUnsourcedClaims(tailoredProfile, masterProfile);
 
     // 5. Monta o título do currículo para o histórico
     let title = 'Currículo Profissional';
