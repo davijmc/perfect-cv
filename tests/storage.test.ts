@@ -1,6 +1,10 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
+
+const TEST_DATA_DIR = path.join(process.cwd(), 'data-test');
+process.env.PERFECT_CV_DATA_DIR = TEST_DATA_DIR;
+
 import { 
   AppConfigSchema, 
   UserProfileSchema, 
@@ -23,13 +27,22 @@ import {
 describe('Storage & Schema Validation', () => {
   const TEST_RESUME_ID = 'test-cv-uuid-123';
 
+  beforeAll(async () => {
+    process.env.PERFECT_CV_DATA_DIR = TEST_DATA_DIR;
+    await fs.mkdir(TEST_DATA_DIR, { recursive: true });
+  });
+
   beforeEach(async () => {
     // Garante que o teste parte de um estado limpo para o ID de teste
     await deleteResume(TEST_RESUME_ID);
   });
 
   afterAll(async () => {
-    await deleteResume(TEST_RESUME_ID);
+    try {
+      await fs.rm(TEST_DATA_DIR, { recursive: true, force: true });
+    } catch {
+      // Ignora erro de limpeza
+    }
   });
 
   it('should validate default config schema and active provider', () => {

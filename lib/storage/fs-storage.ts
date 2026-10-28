@@ -9,17 +9,28 @@ import {
   GeneratedResumeSchema 
 } from '@/lib/ai/schemas';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const RESUMES_DIR = path.join(DATA_DIR, 'resumes');
-const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
-const PROFILE_FILE = path.join(DATA_DIR, 'profile.json');
+function getDataDir(): string {
+  return process.env.PERFECT_CV_DATA_DIR || path.join(process.cwd(), 'data');
+}
+
+function getResumesDir(): string {
+  return path.join(getDataDir(), 'resumes');
+}
+
+function getConfigFile(): string {
+  return path.join(getDataDir(), 'config.json');
+}
+
+function getProfileFile(): string {
+  return path.join(getDataDir(), 'profile.json');
+}
 
 /**
  * Garante que os diretórios locais de dados existam
  */
 export async function ensureDataDirs(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.mkdir(RESUMES_DIR, { recursive: true });
+  await fs.mkdir(getDataDir(), { recursive: true });
+  await fs.mkdir(getResumesDir(), { recursive: true });
 }
 
 /**
@@ -28,7 +39,7 @@ export async function ensureDataDirs(): Promise<void> {
 export async function loadConfig(): Promise<AppConfig> {
   await ensureDataDirs();
   try {
-    const raw = await fs.readFile(CONFIG_FILE, 'utf-8');
+    const raw = await fs.readFile(getConfigFile(), 'utf-8');
     const json = JSON.parse(raw);
     return AppConfigSchema.parse(json);
   } catch (error) {
@@ -45,7 +56,7 @@ export async function loadConfig(): Promise<AppConfig> {
 export async function saveConfig(config: AppConfig): Promise<void> {
   await ensureDataDirs();
   const valid = AppConfigSchema.parse(config);
-  await fs.writeFile(CONFIG_FILE, JSON.stringify(valid, null, 2), 'utf-8');
+  await fs.writeFile(getConfigFile(), JSON.stringify(valid, null, 2), 'utf-8');
 }
 
 /**
@@ -54,7 +65,7 @@ export async function saveConfig(config: AppConfig): Promise<void> {
 export async function loadProfile(): Promise<UserProfile | null> {
   await ensureDataDirs();
   try {
-    const raw = await fs.readFile(PROFILE_FILE, 'utf-8');
+    const raw = await fs.readFile(getProfileFile(), 'utf-8');
     const json = JSON.parse(raw);
     return UserProfileSchema.parse(json);
   } catch (error) {
@@ -68,7 +79,7 @@ export async function loadProfile(): Promise<UserProfile | null> {
 export async function saveProfile(profile: UserProfile): Promise<void> {
   await ensureDataDirs();
   const valid = UserProfileSchema.parse(profile);
-  await fs.writeFile(PROFILE_FILE, JSON.stringify(valid, null, 2), 'utf-8');
+  await fs.writeFile(getProfileFile(), JSON.stringify(valid, null, 2), 'utf-8');
 }
 
 /**
@@ -77,13 +88,13 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
 export async function listResumes(): Promise<GeneratedResume[]> {
   await ensureDataDirs();
   try {
-    const files = await fs.readdir(RESUMES_DIR);
+    const files = await fs.readdir(getResumesDir());
     const resumes: GeneratedResume[] = [];
 
     for (const file of files) {
       if (file.endsWith('.json')) {
         try {
-          const raw = await fs.readFile(path.join(RESUMES_DIR, file), 'utf-8');
+          const raw = await fs.readFile(path.join(getResumesDir(), file), 'utf-8');
           const parsed = GeneratedResumeSchema.parse(JSON.parse(raw));
           resumes.push(parsed);
         } catch {
@@ -105,7 +116,7 @@ export async function listResumes(): Promise<GeneratedResume[]> {
  */
 export async function getResume(id: string): Promise<GeneratedResume | null> {
   await ensureDataDirs();
-  const filePath = path.join(RESUMES_DIR, `${id}.json`);
+  const filePath = path.join(getResumesDir(), `${id}.json`);
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     return GeneratedResumeSchema.parse(JSON.parse(raw));
@@ -120,7 +131,7 @@ export async function getResume(id: string): Promise<GeneratedResume | null> {
 export async function saveResume(resume: GeneratedResume): Promise<void> {
   await ensureDataDirs();
   const valid = GeneratedResumeSchema.parse(resume);
-  const filePath = path.join(RESUMES_DIR, `${valid.id}.json`);
+  const filePath = path.join(getResumesDir(), `${valid.id}.json`);
   await fs.writeFile(filePath, JSON.stringify(valid, null, 2), 'utf-8');
 }
 
@@ -129,7 +140,7 @@ export async function saveResume(resume: GeneratedResume): Promise<void> {
  */
 export async function deleteResume(id: string): Promise<boolean> {
   await ensureDataDirs();
-  const filePath = path.join(RESUMES_DIR, `${id}.json`);
+  const filePath = path.join(getResumesDir(), `${id}.json`);
   try {
     await fs.unlink(filePath);
     return true;
@@ -147,10 +158,10 @@ export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promis
   await ensureDataDirs();
   // Limpa arquivos de fotos anteriores com outras extensões
   try {
-    const existing = await fs.readdir(DATA_DIR);
+    const existing = await fs.readdir(getDataDir());
     for (const f of existing) {
       if (f.startsWith(PHOTO_PREFIX)) {
-        await fs.unlink(path.join(DATA_DIR, f));
+        await fs.unlink(path.join(getDataDir(), f));
       }
     }
   } catch {
@@ -163,7 +174,7 @@ export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promis
   else if (mimeType.includes('gif')) ext = '.gif';
 
   const fileName = `${PHOTO_PREFIX}${ext}`;
-  const filePath = path.join(DATA_DIR, fileName);
+  const filePath = path.join(getDataDir(), fileName);
   await fs.writeFile(filePath, buffer);
   return `/api/profile/photo?t=${Date.now()}`;
 }
@@ -174,11 +185,11 @@ export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promis
 export async function getProfilePhoto(): Promise<{ buffer: Buffer; mimeType: string } | null> {
   await ensureDataDirs();
   try {
-    const existing = await fs.readdir(DATA_DIR);
+    const existing = await fs.readdir(getDataDir());
     const photoFile = existing.find((f) => f.startsWith(PHOTO_PREFIX));
     if (!photoFile) return null;
 
-    const filePath = path.join(DATA_DIR, photoFile);
+    const filePath = path.join(getDataDir(), photoFile);
     const buffer = await fs.readFile(filePath);
 
     let mimeType = 'image/png';
@@ -198,10 +209,10 @@ export async function getProfilePhoto(): Promise<{ buffer: Buffer; mimeType: str
 export async function deleteProfilePhoto(): Promise<void> {
   await ensureDataDirs();
   try {
-    const existing = await fs.readdir(DATA_DIR);
+    const existing = await fs.readdir(getDataDir());
     for (const f of existing) {
       if (f.startsWith(PHOTO_PREFIX)) {
-        await fs.unlink(path.join(DATA_DIR, f));
+        await fs.unlink(path.join(getDataDir(), f));
       }
     }
   } catch {
