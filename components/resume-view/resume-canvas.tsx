@@ -15,6 +15,7 @@ import {
 import { GeneratedResume, TemplateId, UserProfile } from '@/lib/ai/schemas';
 import { TemplateCarousel } from './template-carousel';
 import { TEMPLATE_CATALOG } from './templates';
+import { UnverifiedClaimsBanner } from './unverified-claims-banner';
 
 interface ResumeCanvasProps {
   initialResume: GeneratedResume;
@@ -76,6 +77,24 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       alert('Erro ao salvar alterações: ' + err.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDismissClaims = async () => {
+    const updated: GeneratedResume = {
+      ...resume,
+      unverifiedClaims: [],
+      updatedAt: new Date().toISOString(),
+    };
+    setResume(updated);
+    try {
+      await fetch(`/api/resumes/${resume.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch {
+      // Falha silenciosa em background
     }
   };
 
@@ -216,6 +235,13 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
           <span>{saveBanner}</span>
         </div>
       )}
+
+      {/* Banner de Números Não Verificados no Perfil */}
+      <UnverifiedClaimsBanner
+        claims={resume.unverifiedClaims || []}
+        content={resume.content}
+        onDismiss={handleDismissClaims}
+      />
 
       {/* Carrossel de Estilos Visuais */}
       <TemplateCarousel
