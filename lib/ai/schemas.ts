@@ -129,6 +129,7 @@ export const UserProfileSchema = z.object({
     photoUrl: '',
   }),
   summary: z.string().default(''),
+  keyResults: z.array(z.string()).default([]),
   experiences: z.array(ExperienceItemSchema).default([]),
   education: z.array(EducationItemSchema).default([]),
   skills: SkillsSchema.default({
@@ -141,6 +142,14 @@ export const UserProfileSchema = z.object({
   languages: z.array(LanguageItemSchema).default([]),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
+
+// Trecho gerado com número que não foi encontrado no perfil mestre
+export const UnverifiedClaimSchema = z.object({
+  path: z.string(),
+  text: z.string(),
+  numbers: z.array(z.string()).default([]),
+});
+export type UnverifiedClaim = z.infer<typeof UnverifiedClaimSchema>;
 
 // Os 5 IDs de Template do Carrossel Visual
 export const TemplateIdEnum = z.enum([
@@ -171,5 +180,6 @@ export const GeneratedResumeSchema = z.object({
     })
     .optional(),
   content: UserProfileSchema,
+  unverifiedClaims: z.array(UnverifiedClaimSchema).default([]),
 });
 export type GeneratedResume = z.infer<typeof GeneratedResumeSchema>;
