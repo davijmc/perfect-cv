@@ -100,7 +100,15 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     md += `* ${c.personalInfo.location || ''} | ${c.personalInfo.email || ''} | ${c.personalInfo.phone || ''}\n`;
     if (c.personalInfo.linkedinUrl) md += `* LinkedIn: ${c.personalInfo.linkedinUrl}\n`;
     if (c.personalInfo.githubUrl) md += `* GitHub: ${c.personalInfo.githubUrl}\n`;
-    md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n## Experiência Profissional\n`;
+    md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n`;
+    if (c.keyResults?.length > 0) {
+      md += `## Principais Resultados\n`;
+      c.keyResults.forEach((r) => {
+        md += `- ${r}\n`;
+      });
+      md += `\n`;
+    }
+    md += `## Experiência Profissional\n`;
 
     c.experiences.forEach((exp) => {
       md += `\n### ${exp.role} — ${exp.company}\n`;

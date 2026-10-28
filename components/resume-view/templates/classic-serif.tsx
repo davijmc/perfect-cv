@@ -26,6 +26,13 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
     onUpdateContent({ ...content, summary: val });
   };
 
+  const updateKeyResult = (idx: number, val: string) => {
+    if (!onUpdateContent) return;
+    const items = [...(content.keyResults || [])];
+    items[idx] = val;
+    onUpdateContent({ ...content, keyResults: items });
+  };
+
   const updateHighlight = (expIdx: number, hIdx: number, val: string) => {
     if (!onUpdateContent) return;
     const exps = [...content.experiences];
@@ -77,6 +84,22 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
             isEditable={isEditable}
             className="text-xs text-stone-800 text-justify leading-relaxed"
           />
+        </section>
+      )}
+
+      {/* Principais Resultados */}
+      {content.keyResults?.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-2 text-center">
+            Principais Resultados
+          </h2>
+          <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-stone-800">
+            {content.keyResults.map((r, idx) => (
+              <li key={idx}>
+                <InlineText value={r} onChange={(v) => updateKeyResult(idx, v)} isEditable={isEditable} />
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

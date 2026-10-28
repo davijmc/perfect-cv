@@ -26,6 +26,13 @@ export function NordicWarmTemplate({ content, onUpdateContent, isEditable = true
     onUpdateContent({ ...content, summary: val });
   };
 
+  const updateKeyResult = (idx: number, val: string) => {
+    if (!onUpdateContent) return;
+    const items = [...(content.keyResults || [])];
+    items[idx] = val;
+    onUpdateContent({ ...content, keyResults: items });
+  };
+
   const updateHighlight = (expIdx: number, hIdx: number, val: string) => {
     if (!onUpdateContent) return;
     const exps = [...content.experiences];
@@ -81,6 +88,22 @@ export function NordicWarmTemplate({ content, onUpdateContent, isEditable = true
             isEditable={isEditable}
             className="text-xs text-[#44403c] leading-relaxed"
           />
+        </section>
+      )}
+
+      {/* Principais Resultados */}
+      {content.keyResults?.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#a8a29e] mb-1.5">
+            Principais Resultados
+          </h2>
+          <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-[#44403c]">
+            {content.keyResults.map((r, idx) => (
+              <li key={idx}>
+                <InlineText value={r} onChange={(v) => updateKeyResult(idx, v)} isEditable={isEditable} />
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
