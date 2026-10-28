@@ -14,8 +14,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
     // Suporte tanto ao PDFParse moderno v2 quanto ao fallback funcional
     let ParserClass: any = PDFParse;
     if (!ParserClass) {
-      // @ts-ignore
-      const mod = await import('pdf-parse');
+      const mod: any = await import('pdf-parse');
       ParserClass = mod.PDFParse || mod.default || mod;
     }
 
