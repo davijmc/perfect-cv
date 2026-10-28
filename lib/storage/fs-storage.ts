@@ -137,3 +137,75 @@ export async function deleteResume(id: string): Promise<boolean> {
     return false;
   }
 }
+
+const PHOTO_PREFIX = 'profile-photo';
+
+/**
+ * Salva a foto de perfil facultativa do usuário na pasta data/
+ */
+export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promise<string> {
+  await ensureDataDirs();
+  // Limpa arquivos de fotos anteriores com outras extensões
+  try {
+    const existing = await fs.readdir(DATA_DIR);
+    for (const f of existing) {
+      if (f.startsWith(PHOTO_PREFIX)) {
+        await fs.unlink(path.join(DATA_DIR, f));
+      }
+    }
+  } catch {
+    // Ignora se não conseguir ler diretório
+  }
+
+  let ext = '.png';
+  if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = '.jpg';
+  else if (mimeType.includes('webp')) ext = '.webp';
+  else if (mimeType.includes('gif')) ext = '.gif';
+
+  const fileName = `${PHOTO_PREFIX}${ext}`;
+  const filePath = path.join(DATA_DIR, fileName);
+  await fs.writeFile(filePath, buffer);
+  return `/api/profile/photo?t=${Date.now()}`;
+}
+
+/**
+ * Obtém os dados binários e mimeType da foto de perfil salva em data/
+ */
+export async function getProfilePhoto(): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  await ensureDataDirs();
+  try {
+    const existing = await fs.readdir(DATA_DIR);
+    const photoFile = existing.find((f) => f.startsWith(PHOTO_PREFIX));
+    if (!photoFile) return null;
+
+    const filePath = path.join(DATA_DIR, photoFile);
+    const buffer = await fs.readFile(filePath);
+
+    let mimeType = 'image/png';
+    if (photoFile.endsWith('.jpg') || photoFile.endsWith('.jpeg')) mimeType = 'image/jpeg';
+    else if (photoFile.endsWith('.webp')) mimeType = 'image/webp';
+    else if (photoFile.endsWith('.gif')) mimeType = 'image/gif';
+
+    return { buffer, mimeType };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Exclui a foto de perfil da pasta data/
+ */
+export async function deleteProfilePhoto(): Promise<void> {
+  await ensureDataDirs();
+  try {
+    const existing = await fs.readdir(DATA_DIR);
+    for (const f of existing) {
+      if (f.startsWith(PHOTO_PREFIX)) {
+        await fs.unlink(path.join(DATA_DIR, f));
+      }
+    }
+  } catch {
+    // Ignora erro se não existir
+  }
+}
+

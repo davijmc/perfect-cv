@@ -38,6 +38,17 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
       {/* Coluna Esquerda: Barra Lateral Slate (32% largura) */}
       <aside className="w-[32%] bg-slate-50 p-8 border-r border-slate-200 flex flex-col justify-between">
         <div className="space-y-6">
+          {/* Foto de Perfil 3x4 (Facultativo) */}
+          {p.photoUrl && (
+            <div className="flex justify-center pb-2">
+              <img
+                src={p.photoUrl}
+                alt={p.fullName || 'Foto de Perfil'}
+                className="w-24 h-32 object-cover rounded-xl border-2 border-slate-300 shadow-sm"
+              />
+            </div>
+          )}
+
           {/* Contato */}
           <div className="space-y-2">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">

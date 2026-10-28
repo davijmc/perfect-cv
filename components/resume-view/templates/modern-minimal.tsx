@@ -36,21 +36,33 @@ export function ModernMinimalTemplate({ content, onUpdateContent, isEditable = t
   return (
     <div className="a4-page p-12 text-slate-800 font-sans leading-relaxed text-sm bg-white">
       {/* Header */}
-      <header className="border-b-2 border-slate-900 pb-5 mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 uppercase">
-          <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
-        </h1>
-        <p className="text-base font-semibold text-blue-700 mt-1">
-          <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
-        </p>
+      <header className="border-b-2 border-slate-900 pb-5 mb-6 flex items-start justify-between gap-6">
+        <div className="flex-1">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 uppercase">
+            <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
+          </h1>
+          <p className="text-base font-semibold text-blue-700 mt-1">
+            <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
+          </p>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-3">
-          {p.location && <span>📍 {p.location}</span>}
-          {p.email && <span>✉️ {p.email}</span>}
-          {p.phone && <span>📞 {p.phone}</span>}
-          {p.linkedinUrl && <span>🔗 {p.linkedinUrl.replace('https://', '')}</span>}
-          {p.githubUrl && <span>💻 {p.githubUrl.replace('https://', '')}</span>}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 mt-3">
+            {p.location && <span>📍 {p.location}</span>}
+            {p.email && <span>✉️ {p.email}</span>}
+            {p.phone && <span>📞 {p.phone}</span>}
+            {p.linkedinUrl && <span>🔗 {p.linkedinUrl.replace('https://', '')}</span>}
+            {p.githubUrl && <span>💻 {p.githubUrl.replace('https://', '')}</span>}
+          </div>
         </div>
+
+        {p.photoUrl && (
+          <div className="shrink-0">
+            <img
+              src={p.photoUrl}
+              alt={p.fullName || 'Foto de Perfil'}
+              className="w-20 h-26 sm:w-24 sm:h-32 object-cover rounded-xl border border-slate-300 shadow-xs"
+            />
+          </div>
+        )}
       </header>
 
       {/* Resumo Profissional */}

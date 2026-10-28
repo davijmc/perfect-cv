@@ -14,7 +14,10 @@ import {
   saveResume, 
   listResumes, 
   getResume, 
-  deleteResume 
+  deleteResume,
+  saveProfilePhoto,
+  getProfilePhoto,
+  deleteProfilePhoto
 } from '../lib/storage/fs-storage';
 
 describe('Storage & Schema Validation', () => {
@@ -146,6 +149,27 @@ describe('Storage & Schema Validation', () => {
     const deleted = await deleteResume(TEST_RESUME_ID);
     expect(deleted).toBe(true);
     const afterDelete = await getResume(TEST_RESUME_ID);
+    expect(afterDelete).toBeNull();
+  });
+
+  it('should save, retrieve and delete profile photo in data/ directory', async () => {
+    // 1. Limpa foto anterior
+    await deleteProfilePhoto();
+
+    // 2. Salva foto mockada (1x1 PNG transparente)
+    const mockPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    const photoUrl = await saveProfilePhoto(mockPng, 'image/png');
+    expect(photoUrl).toContain('/api/profile/photo');
+
+    // 3. Recupera foto
+    const loaded = await getProfilePhoto();
+    expect(loaded).not.toBeNull();
+    expect(loaded?.mimeType).toBe('image/png');
+    expect(loaded?.buffer.length).toBe(mockPng.length);
+
+    // 4. Remove foto
+    await deleteProfilePhoto();
+    const afterDelete = await getProfilePhoto();
     expect(afterDelete).toBeNull();
   });
 });

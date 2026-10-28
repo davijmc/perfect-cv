@@ -37,17 +37,26 @@ export function NordicWarmTemplate({ content, onUpdateContent, isEditable = true
     <div className="a4-page p-12 text-[#1c1917] font-sans leading-relaxed text-xs bg-[#fdfbf7]">
       {/* Header Escandinavo Refinado */}
       <header className="border-b border-[#e7e5e4] pb-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-          <div>
-            <h1 className="text-3xl font-light tracking-tight text-[#1c1917]">
-              <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
-            </h1>
-            <p className="text-sm font-medium text-[#78716c] mt-0.5">
-              <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-5">
+            {p.photoUrl && (
+              <img
+                src={p.photoUrl}
+                alt={p.fullName || 'Foto de Perfil'}
+                className="w-20 h-26 sm:w-22 sm:h-28 object-cover rounded-2xl border border-[#d6d3d1] shadow-xs shrink-0"
+              />
+            )}
+            <div>
+              <h1 className="text-3xl font-light tracking-tight text-[#1c1917]">
+                <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
+              </h1>
+              <p className="text-sm font-medium text-[#78716c] mt-0.5">
+                <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
+              </p>
+            </div>
           </div>
 
-          <div className="text-[11px] text-[#78716c] space-y-0.5 sm:text-right">
+          <div className="text-[11px] text-[#78716c] space-y-0.5 sm:text-right shrink-0">
             {p.location && <div>{p.location}</div>}
             {p.email && <div>{p.email}</div>}
             {p.phone && <div>{p.phone}</div>}

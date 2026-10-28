@@ -16,7 +16,10 @@ import {
   CheckCircle2,
   Calendar,
   MapPin,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Camera,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { UserProfile, ExperienceItem, EducationItem, ProjectItem, CertificationItem, LanguageItem } from '@/lib/ai/schemas';
 
@@ -30,10 +33,67 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education' | 'skills' | 'projects' | 'other'>('personal');
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
   // Atualiza estado local quando initialProfile mudar (ex: após upload de CV)
   React.useEffect(() => {
     setProfile(initialProfile);
   }, [initialProfile]);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Por favor, selecione uma imagem válida (PNG, JPG ou WebP).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('A imagem deve ter no máximo 5MB.');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    setPhotoError(null);
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await fetch('/api/profile/photo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.photoUrl) {
+        handlePersonalChange('photoUrl', data.photoUrl);
+      } else {
+        setPhotoError(data.message || 'Falha ao salvar foto.');
+      }
+    } catch (err: any) {
+      setPhotoError('Erro ao enviar foto: ' + err.message);
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!confirm('Deseja realmente remover a foto de perfil?')) return;
+    setIsUploadingPhoto(true);
+    setPhotoError(null);
+    try {
+      await fetch('/api/profile/photo', { method: 'DELETE' });
+      handlePersonalChange('photoUrl', '');
+    } catch (err: any) {
+      setPhotoError('Erro ao remover foto: ' + err.message);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Atualizador de Dados Pessoais
   const handlePersonalChange = (field: string, val: string) => {
@@ -262,6 +322,84 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
               Informações Pessoais de Contato
             </h3>
+
+            {/* Seção Foto 3x4 Facultativa */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="relative group shrink-0">
+                <div className="w-24 h-32 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden shadow-sm relative">
+                  {profile.personalInfo.photoUrl ? (
+                    <img
+                      src={profile.personalInfo.photoUrl}
+                      alt="Foto de Perfil"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-2 text-center text-slate-400">
+                      <Camera className="h-8 w-8 text-slate-300 mb-1" />
+                      <span className="text-[10px] font-semibold leading-tight text-slate-600">
+                        Foto 3x4
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-medium">(Facultativo)</span>
+                    </div>
+                  )}
+
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-center sm:text-left flex-1">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-2">
+                    <span>Foto de Perfil Profissional</span>
+                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                      Facultativo
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Adicione uma foto no padrão 3x4 para exibir no cabeçalho dos seus currículos. Arquivos suportados: JPG, PNG ou WebP (máx. 5MB). Fica salva de forma privada no seu computador em <code className="font-mono text-[11px] bg-slate-200/70 px-1 py-0.5 rounded">data/</code>.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="flex items-center gap-1.5 rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-xs disabled:opacity-50"
+                  >
+                    <Upload className="h-3.5 w-3.5 text-blue-600" />
+                    <span>{profile.personalInfo.photoUrl ? 'Trocar Foto' : 'Fazer Upload de Foto'}</span>
+                  </button>
+
+                  {profile.personalInfo.photoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={isUploadingPhoto}
+                      className="flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-all shadow-xs disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Remover</span>
+                    </button>
+                  )}
+                </div>
+
+                {photoError && (
+                  <p className="text-xs text-rose-600 font-medium">{photoError}</p>
+                )}
+              </div>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">

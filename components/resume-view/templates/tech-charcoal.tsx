@@ -37,17 +37,26 @@ export function TechCharcoalTemplate({ content, onUpdateContent, isEditable = tr
     <div className="a4-page min-h-[297mm] bg-white font-sans text-xs text-zinc-800">
       {/* Cabeçalho Charcoal / Grafite */}
       <header className="bg-zinc-900 text-white p-10">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
-              <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
-            </h1>
-            <p className="text-sm font-mono text-emerald-400 mt-1">
-              &gt; <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="flex items-center gap-5">
+            {p.photoUrl && (
+              <img
+                src={p.photoUrl}
+                alt={p.fullName || 'Foto de Perfil'}
+                className="w-20 h-26 sm:w-22 sm:h-28 object-cover rounded-lg border-2 border-emerald-500/50 shadow-md shrink-0"
+              />
+            )}
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
+              </h1>
+              <p className="text-sm font-mono text-emerald-400 mt-1">
+                &gt; <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
+              </p>
+            </div>
           </div>
 
-          <div className="text-[11px] font-mono text-zinc-400 space-y-0.5 text-right">
+          <div className="text-[11px] font-mono text-zinc-400 space-y-0.5 sm:text-right shrink-0">
             {p.location && <div>{p.location}</div>}
             {p.email && <div>{p.email}</div>}
             {p.phone && <div>{p.phone}</div>}

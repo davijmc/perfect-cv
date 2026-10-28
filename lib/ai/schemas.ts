@@ -52,6 +52,7 @@ export const PersonalInfoSchema = z.object({
   linkedinUrl: z.string().optional().default(''),
   githubUrl: z.string().optional().default(''),
   portfolioUrl: z.string().optional().default(''),
+  photoUrl: z.string().optional().default(''),
 });
 export type PersonalInfo = z.infer<typeof PersonalInfoSchema>;
 
@@ -125,6 +126,7 @@ export const UserProfileSchema = z.object({
     linkedinUrl: '',
     githubUrl: '',
     portfolioUrl: '',
+    photoUrl: '',
   }),
   summary: z.string().default(''),
   experiences: z.array(ExperienceItemSchema).default([]),

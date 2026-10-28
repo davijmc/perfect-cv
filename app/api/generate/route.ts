@@ -90,7 +90,13 @@ export async function POST(request: Request) {
       templateId: chosenTemplate,
       targetRole,
       targetJobDetails,
-      content: tailoredProfile,
+      content: {
+        ...tailoredProfile,
+        personalInfo: {
+          ...tailoredProfile.personalInfo,
+          photoUrl: masterProfile.personalInfo.photoUrl || tailoredProfile.personalInfo.photoUrl || '',
+        },
+      },
     };
 
     await saveResume(newResume);
