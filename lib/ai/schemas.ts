@@ -161,12 +161,35 @@ export const TemplateIdEnum = z.enum([
 ]);
 export type TemplateId = z.infer<typeof TemplateIdEnum>;
 
+// Status de comprovação de requisitos da vaga contra o perfil
+export const RequirementStatusEnum = z.enum(['supported', 'partial', 'not_supported']);
+export type RequirementStatus = z.infer<typeof RequirementStatusEnum>;
+
+export const JobRequirementItemSchema = z.object({
+  text: z.string(),
+  category: z.enum(['tech', 'experience', 'soft_skill', 'education', 'general']).default('general'),
+  importance: z.enum(['required', 'desired']).default('required'),
+  status: RequirementStatusEnum,
+  evidence: z.string().optional().default(''),
+});
+export type JobRequirementItem = z.infer<typeof JobRequirementItemSchema>;
+
+export const JobAnalysisResultSchema = z.object({
+  jobTitle: z.string().default(''),
+  company: z.string().optional().default(''),
+  summary: z.string().default(''),
+  requirements: z.array(JobRequirementItemSchema).default([]),
+  matchPercentage: z.number().min(0).max(100).default(0),
+});
+export type JobAnalysisResult = z.infer<typeof JobAnalysisResultSchema>;
+
 // Modelo de Currículo Gerado (salvo em data/resumes/[id].json)
 export const GeneratedResumeSchema = z.object({
   id: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
   title: z.string(),
+  assistantLevel: z.enum(['simple', 'advanced']).default('simple'),
   mode: z.enum(['generic', 'job_specific', 'from_scratch']).default('generic'),
   depth: z.enum(['lean', 'detailed']).default('lean'),
   templateId: TemplateIdEnum.default('modern-minimal'),
@@ -179,6 +202,7 @@ export const GeneratedResumeSchema = z.object({
       rawDescription: z.string().optional(),
     })
     .optional(),
+  jobAnalysis: JobAnalysisResultSchema.optional(),
   content: UserProfileSchema,
   unverifiedClaims: z.array(UnverifiedClaimSchema).default([]),
 });
