@@ -169,9 +169,9 @@ export function PhotoCropModal({ imageSrc, onCropComplete, onCancel }: PhotoCrop
 
         {/* Instruções */}
         <div className="bg-blue-50/50 px-6 py-2.5 text-xs text-blue-800 border-b border-blue-100 flex items-center justify-between">
-          <span>Arraste a foto para posicionar seu rosto e use a barra de zoom.</span>
-          <span className="font-semibold font-mono text-[11px] bg-blue-100 px-2 py-0.5 rounded-full">
-            3 : 4
+          <span>Enquadre seu rosto na moldura 3x4. A foto manterá os cantos arredondados no currículo.</span>
+          <span className="font-semibold font-mono text-[11px] bg-blue-100 px-2 py-0.5 rounded-full shrink-0">
+            3x4 Arredondado
           </span>
         </div>
 
@@ -209,9 +209,9 @@ export function PhotoCropModal({ imageSrc, onCropComplete, onCancel }: PhotoCrop
             />
           </div>
 
-          {/* Máscara de Recorte 3x4 */}
+          {/* Máscara de Recorte 3x4 com Cantos Arredondados */}
           <div
-            className="pointer-events-none relative rounded-2xl shadow-[0_0_0_9999px_rgba(15,23,42,0.85)] border-2 border-white/90"
+            className="pointer-events-none relative rounded-2xl shadow-[0_0_0_9999px_rgba(15,23,42,0.85)] border-2 border-white ring-2 ring-blue-500/70"
             style={{
               width: `${CROP_WIDTH}px`,
               height: `${CROP_HEIGHT}px`,

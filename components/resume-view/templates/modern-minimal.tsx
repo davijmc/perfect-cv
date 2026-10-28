@@ -55,12 +55,14 @@ export function ModernMinimalTemplate({ content, onUpdateContent, isEditable = t
         </div>
 
         {p.photoUrl && (
-          <div className="shrink-0">
-            <img
-              src={p.photoUrl}
-              alt={p.fullName || 'Foto de Perfil'}
-              className="w-20 h-26 sm:w-24 sm:h-32 object-cover rounded-xl border border-slate-300 shadow-xs"
-            />
+          <div className="shrink-0 self-center">
+            <div className="w-[84px] h-[112px] sm:w-[90px] sm:h-[120px] rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-50 ring-1 ring-slate-100">
+              <img
+                src={p.photoUrl}
+                alt={p.fullName || 'Foto de Perfil'}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         )}
       </header>

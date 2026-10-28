@@ -348,7 +348,7 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
             {/* Seção Foto 3x4 Facultativa */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <div className="relative group shrink-0">
-                <div className="w-24 h-32 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden shadow-sm relative">
+                <div className="w-[90px] h-[120px] rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden shadow-sm relative">
                   {profile.personalInfo.photoUrl ? (
                     <img
                       src={profile.personalInfo.photoUrl}

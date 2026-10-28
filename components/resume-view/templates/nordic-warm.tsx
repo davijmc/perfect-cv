@@ -37,31 +37,34 @@ export function NordicWarmTemplate({ content, onUpdateContent, isEditable = true
     <div className="a4-page p-12 text-[#1c1917] font-sans leading-relaxed text-xs bg-[#fdfbf7]">
       {/* Header Escandinavo Refinado */}
       <header className="border-b border-[#e7e5e4] pb-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-5">
-            {p.photoUrl && (
-              <img
-                src={p.photoUrl}
-                alt={p.fullName || 'Foto de Perfil'}
-                className="w-20 h-26 sm:w-22 sm:h-28 object-cover rounded-2xl border border-[#d6d3d1] shadow-xs shrink-0"
-              />
-            )}
-            <div>
-              <h1 className="text-3xl font-light tracking-tight text-[#1c1917]">
-                <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
-              </h1>
-              <p className="text-sm font-medium text-[#78716c] mt-0.5">
-                <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
-              </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-light tracking-tight text-[#1c1917]">
+              <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
+            </h1>
+            <p className="text-sm font-medium text-[#78716c]">
+              <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
+            </p>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#78716c] pt-2">
+              {p.location && <span>📍 {p.location}</span>}
+              {p.email && <span>✉️ {p.email}</span>}
+              {p.phone && <span>📞 {p.phone}</span>}
+              {p.linkedinUrl && <span>🔗 {p.linkedinUrl.replace('https://', '')}</span>}
             </div>
           </div>
 
-          <div className="text-[11px] text-[#78716c] space-y-0.5 sm:text-right shrink-0">
-            {p.location && <div>{p.location}</div>}
-            {p.email && <div>{p.email}</div>}
-            {p.phone && <div>{p.phone}</div>}
-            {p.linkedinUrl && <div>{p.linkedinUrl.replace('https://', '')}</div>}
-          </div>
+          {p.photoUrl && (
+            <div className="shrink-0 self-center">
+              <div className="w-[84px] h-[112px] sm:w-[90px] sm:h-[120px] overflow-hidden rounded-2xl border-2 border-[#d6d3d1] shadow-xs bg-[#f5f5f4]">
+                <img
+                  src={p.photoUrl}
+                  alt={p.fullName || 'Foto de Perfil'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

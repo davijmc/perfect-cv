@@ -36,30 +36,31 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
   return (
     <div className="a4-page p-12 text-stone-900 font-serif leading-relaxed text-xs bg-[#fafafa]">
       {/* Cabeçalho Centralizado Clássico */}
-      <header className="border-b border-stone-400 pb-4 mb-6">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          {p.photoUrl && (
-            <img
-              src={p.photoUrl}
-              alt={p.fullName || 'Foto de Perfil'}
-              className="w-20 h-26 object-cover rounded-md border-2 border-stone-400 p-0.5 shadow-xs shrink-0"
-            />
-          )}
-          <div className="text-center">
-            <h1 className="text-3xl font-normal tracking-wide text-stone-950 font-serif">
-              <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
-            </h1>
-            <p className="text-sm font-sans italic text-stone-700 mt-1">
-              <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
-            </p>
-
-            <div className="flex justify-center flex-wrap gap-x-3 text-[11px] font-sans text-stone-600 mt-2">
-              {p.location && <span>{p.location}</span>}
-              {p.email && <span>• {p.email}</span>}
-              {p.phone && <span>• {p.phone}</span>}
-              {p.linkedinUrl && <span>• {p.linkedinUrl.replace('https://', '')}</span>}
+      <header className="border-b border-stone-400 pb-5 mb-6 text-center">
+        {p.photoUrl && (
+          <div className="flex justify-center mb-4">
+            <div className="w-[84px] h-[112px] sm:w-[90px] sm:h-[120px] overflow-hidden rounded-2xl border-2 border-stone-400/80 p-0.5 bg-white shadow-xs">
+              <img
+                src={p.photoUrl}
+                alt={p.fullName || 'Foto de Perfil'}
+                className="w-full h-full object-cover rounded-[14px]"
+              />
             </div>
           </div>
+        )}
+
+        <h1 className="text-3xl font-normal tracking-wide text-stone-950 font-serif">
+          <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
+        </h1>
+        <p className="text-sm font-sans italic text-stone-700 mt-1">
+          <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
+        </p>
+
+        <div className="flex justify-center flex-wrap gap-x-3 text-[11px] font-sans text-stone-600 mt-2">
+          {p.location && <span>{p.location}</span>}
+          {p.email && <span>• {p.email}</span>}
+          {p.phone && <span>• {p.phone}</span>}
+          {p.linkedinUrl && <span>• {p.linkedinUrl.replace('https://', '')}</span>}
         </div>
       </header>
 

@@ -40,12 +40,14 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
         <div className="space-y-6">
           {/* Foto de Perfil 3x4 (Facultativo) */}
           {p.photoUrl && (
-            <div className="flex justify-center pb-2">
-              <img
-                src={p.photoUrl}
-                alt={p.fullName || 'Foto de Perfil'}
-                className="w-24 h-32 object-cover rounded-xl border-2 border-slate-300 shadow-sm"
-              />
+            <div className="flex flex-col items-center pb-4 mb-1 border-b border-slate-200/70">
+              <div className="w-[90px] h-[120px] overflow-hidden rounded-2xl border-2 border-white shadow-md ring-1 ring-slate-200/80 bg-white">
+                <img
+                  src={p.photoUrl}
+                  alt={p.fullName || 'Foto de Perfil'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           )}
 

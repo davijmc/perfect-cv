@@ -40,11 +40,13 @@ export function TechCharcoalTemplate({ content, onUpdateContent, isEditable = tr
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="flex items-center gap-5">
             {p.photoUrl && (
-              <img
-                src={p.photoUrl}
-                alt={p.fullName || 'Foto de Perfil'}
-                className="w-20 h-26 sm:w-22 sm:h-28 object-cover rounded-lg border-2 border-emerald-500/50 shadow-md shrink-0"
-              />
+              <div className="w-[84px] h-[112px] sm:w-[90px] sm:h-[120px] overflow-hidden rounded-2xl border-2 border-emerald-500/60 shadow-lg shadow-emerald-950/40 shrink-0 bg-zinc-800">
+                <img
+                  src={p.photoUrl}
+                  alt={p.fullName || 'Foto de Perfil'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             )}
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white">
