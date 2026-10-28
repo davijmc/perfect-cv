@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { mode, depth, targetRole, targetJobDetails, templateId, assistantLevel, jobAnalysis } = body;
-    const level: 'simple' | 'advanced' = assistantLevel === 'advanced' ? 'advanced' : 'simple';
+    const level: 'simple' | 'advanced' = assistantLevel === 'simple' ? 'simple' : 'advanced';
 
     // 1. Carrega o perfil profissional mestre
     const masterProfile = await loadProfile();

@@ -25,8 +25,8 @@ interface GeneratorWizardProps {
 }
 
 export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
-  // Nível de assistência: Modo Simples vs Modo Avançado
-  const [assistantLevel, setAssistantLevel] = useState<'simple' | 'advanced'>('advanced');
+  // Modo avançado único com resultados e diagnóstico
+  const assistantLevel = 'advanced';
 
   // Modo de objetivo, profundidade e template
   const [mode, setMode] = useState<'generic' | 'job_specific' | 'from_scratch'>('job_specific');
@@ -182,68 +182,6 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
 
   return (
     <div className="space-y-8">
-      {/* 0. Escolha do Modo: Simples vs Avançado */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">0</span>
-            <span>Como você deseja gerar seu currículo?</span>
-          </h2>
-          <p className="text-xs text-slate-600">Escolha o nível de profundidade e inteligência para este currículo.</p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Modo Simples */}
-          <button
-            type="button"
-            onClick={() => {
-              setAssistantLevel('simple');
-              setJobAnalysis(null);
-            }}
-            className={`p-5 rounded-2xl border text-left transition-all relative ${
-              assistantLevel === 'simple'
-                ? 'border-blue-600 bg-blue-50/50 shadow-md ring-2 ring-blue-500/20'
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                Geração rápida em 1 clique
-              </span>
-              {assistantLevel === 'simple' && <Check className="h-4 w-4 text-blue-600" />}
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Modo Simples</h3>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Geração ágil e direta em 1 clique sem seção de resultados. Mantém seu currículo tradicional, polido e enxuto para envio imediato.
-            </p>
-          </button>
-
-          {/* Modo Avançado */}
-          <button
-            type="button"
-            onClick={() => setAssistantLevel('advanced')}
-            className={`p-5 rounded-2xl border text-left transition-all relative ${
-              assistantLevel === 'advanced'
-                ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-500/20'
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                Recomendado · Resultados & Diagnóstico
-              </span>
-              {assistantLevel === 'advanced' && <Check className="h-4 w-4 text-indigo-600" />}
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Modo Avançado</h3>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Diagnóstico de requisitos da vaga (destacando o que você tem e o que não tem) com opção de adequação automática e seção de Principais Resultados.
-            </p>
-          </button>
-        </div>
-      </section>
-
       {/* 1. Escolha do Objetivo do Currículo */}
       <section className="space-y-4">
         <div>
@@ -565,18 +503,12 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
       )}
 
       {/* Botão de Ação: Gerar Currículo */}
-      {/* Se o usuário já tiver o JobAnalysisCard exibido, a ação principal está no próprio card. 
-          Mesmo assim, mantemos o botão inferior como garantia ou para os outros modos */}
       <div className="flex justify-end pt-4">
         <button
           type="button"
           onClick={() => handleGenerate()}
           disabled={isGenerating || isAnalyzingJob}
-          className={`flex items-center gap-2.5 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-xl active:scale-95 transition-all disabled:opacity-50 cursor-pointer ${
-            assistantLevel === 'advanced'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/25 hover:from-indigo-700 hover:to-purple-700'
-              : 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700'
-          }`}
+          className="flex items-center gap-2.5 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/25 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
         >
           {isGenerating ? (
             <>
@@ -587,9 +519,7 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
             <>
               <Sparkles className="h-5 w-5 text-amber-300" />
               <span>
-                {assistantLevel === 'advanced'
-                  ? (jobAnalysis ? 'Adequar e Gerar Currículo com Resultados' : 'Gerar Currículo com Resultados')
-                  : 'Gerar Currículo (Modo Simples)'}
+                {jobAnalysis ? 'Adequar e Gerar Currículo com Resultados' : 'Gerar Currículo com Resultados'}
               </span>
               <ArrowRight className="h-5 w-5" />
             </>

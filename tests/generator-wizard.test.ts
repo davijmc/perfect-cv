@@ -4,15 +4,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { GeneratorWizard } from '../components/generator/generator-wizard';
 
 describe('GeneratorWizard Component', () => {
-  it('renderiza as opções de Modo Simples e Modo Avançado', () => {
+  it('inicia diretamente no objetivo do currículo sem exibir modo simples', () => {
     const html = renderToStaticMarkup(
       React.createElement(GeneratorWizard, { onGenerated: () => {} })
     );
 
-    expect(html).toContain('Modo Simples');
-    expect(html).toContain('Modo Avançado');
-    expect(html).toContain('Geração rápida em 1 clique');
-    expect(html).toContain('Diagnóstico de requisitos');
+    expect(html).toContain('Qual é o objetivo deste currículo?');
+    expect(html).not.toContain('Modo Simples');
+    expect(html).toContain('Gerar Currículo com Resultados');
   });
 
   it('renderiza os objetivos do currículo e templates', () => {
