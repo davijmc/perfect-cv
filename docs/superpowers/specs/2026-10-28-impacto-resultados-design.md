@@ -25,8 +25,8 @@ Módulo puro, sem dependência de IA.
 
 - `extractNumbers(text): string[]` — extrai tokens numéricos e os normaliza para forma canônica:
   - separador de milhar `.` removido quando seguido de 3 dígitos (`1.200` → `1200`); vírgula decimal → ponto (`1,5` → `1.5`);
-  - multiplicadores `mil`/`k` (×1.000), `M`/`mi`/`milhão`/`milhões` (×1.000.000), `bi`/`bilhão`/`bilhões` (×1.000.000.000) são aplicados; o valor sem multiplicador também é aceito na comparação (ex.: "50M" casa com "50 milhões" e com "50000000");
-  - `%`, `R$`, `+` e `x` são ignorados para comparação.
+  - multiplicadores `mil`/`k` (×1.000), `M`/`mi`/`milhão`/`milhões` (×1.000.000), `bi`/`bilhão`/`bilhões` (×1.000.000.000) são aplicados e só o valor multiplicado é comparado (ex.: "50M" casa com "50 milhões" e com "50000000", mas **não** com um "50" solto, para não aceitar "50 usuários" como fonte de "R$ 50M");
+  - `%`, `R$`, `+` e `x` são ignorados para comparação; tokens colados a letras (`S3`, `EC2`, `OAuth2`) não são extraídos.
 - `buildSourceNumbers(profile): Set<string>` — todos os números do perfil mestre serializado + **anos de experiência derivados** das datas (soma de intervalos sem sobreposição e maior intervalo individual; aceita floor e ceil).
 - `findUnsourcedClaims(generated, sourceProfile): UnverifiedClaim[]` — verifica `summary`, `keyResults[]`, `experiences[].highlights[]`, `projects[].description`. Cada trecho com ao menos um número fora do conjunto-fonte vira um claim.
 - Números da descrição da vaga **não** entram na fonte.
