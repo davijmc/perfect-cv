@@ -18,7 +18,8 @@ import { findUnsourcedClaims } from '@/lib/ai/number-guard';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { mode, depth, targetRole, targetJobDetails, templateId } = body;
+    const { mode, depth, targetRole, targetJobDetails, templateId, assistantLevel, jobAnalysis } = body;
+    const level: 'simple' | 'advanced' = assistantLevel === 'advanced' ? 'advanced' : 'simple';
 
     // 1. Carrega o perfil profissional mestre
     const masterProfile = await loadProfile();
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
       depth: depth || 'lean',
       targetRole,
       targetJobDetails,
+      assistantLevel: level,
+      jobAnalysis,
     });
 
     // 4. Executa a geração estruturada com a LLM
@@ -70,12 +73,18 @@ export async function POST(request: Request) {
     };
 
     let tailoredProfile = await generate(userPrompt);
+    if (level === 'simple') {
+      tailoredProfile.keyResults = [];
+    }
     let unverifiedClaims = findUnsourcedClaims(tailoredProfile, masterProfile);
 
     // 4.1 Guarda de números: uma única regeneração com feedback explícito
     if (unverifiedClaims.length > 0) {
       try {
         const retried = await generate(userPrompt + buildRetryFeedback(unverifiedClaims));
+        if (level === 'simple') {
+          retried.keyResults = [];
+        }
         const retriedClaims = findUnsourcedClaims(retried, masterProfile);
         if (retriedClaims.length <= unverifiedClaims.length) {
           tailoredProfile = retried;
@@ -110,6 +119,8 @@ export async function POST(request: Request) {
       mode: mode || 'generic',
       depth: depth || 'lean',
       templateId: chosenTemplate,
+      assistantLevel: level,
+      jobAnalysis,
       targetRole,
       targetJobDetails,
       content: {
