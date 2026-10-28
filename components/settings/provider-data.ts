@@ -25,7 +25,7 @@ export const PROVIDERS_META: ProviderMeta[] = [
     apiKeyHelpText: 'Obter chave gratuita no Google AI Studio',
     requiresApiKey: true,
     supportsBaseUrl: false,
-    popularModels: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+    popularModels: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'],
   },
   {
     id: 'openai',

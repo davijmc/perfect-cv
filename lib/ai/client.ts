@@ -175,7 +175,7 @@ export async function testProviderConnection(
  * e retorna os modelos disponíveis que suportam o método generateContent.
  */
 export async function listGeminiModelsFromApi(apiKey?: string): Promise<string[]> {
-  const fallback = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const fallback = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'];
   if (!apiKey || apiKey.trim().length === 0) {
     return fallback;
   }
@@ -192,14 +192,33 @@ export async function listGeminiModelsFromApi(apiKey?: string): Promise<string[]
       return fallback;
     }
 
-    // Filtra modelos disponíveis que suportam generateContent
+    // Filtra modelos disponíveis que suportam generateContent e são focados em texto/geração de currículo
     const supported = data.models
       .filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
       .map((m: any) => m.name.replace(/^models\//, ''))
-      .filter((name: string) => !name.includes('embedding') && !name.includes('aqa'));
+      .filter((name: string) => {
+        const id = name.toLowerCase();
+        if (
+          id.includes('embedding') ||
+          id.includes('aqa') ||
+          id.includes('tts') ||
+          id.includes('image') ||
+          id.includes('banana') ||
+          id.includes('lyria') ||
+          id.includes('clip') ||
+          id.includes('robotics') ||
+          id.includes('computer-use') ||
+          id.includes('transcribe') ||
+          id.includes('customtools') ||
+          id.includes('2.5-')
+        ) {
+          return false;
+        }
+        return true;
+      });
 
-    // Pega os 3 mais relevantes (dando preferência aos modelos flash e pro)
-    const priority = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    // Pega os 3 mais relevantes (dando preferência aos modelos estáveis e velozes)
+    const priority = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
     const matched = priority.filter((p) => supported.includes(p));
     const others = supported.filter((s: string) => !matched.includes(s));
 

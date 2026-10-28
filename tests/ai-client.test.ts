@@ -32,8 +32,8 @@ describe('AI Client Multi-Provider Resolution', () => {
   it('should return exactly 3 suggested models from listGeminiModelsFromApi fallback when no key', async () => {
     const models = await listGeminiModelsFromApi('');
     expect(models).toHaveLength(3);
-    expect(models).toContain('gemini-2.0-flash');
-    expect(models).toContain('gemini-1.5-flash');
-    expect(models).toContain('gemini-1.5-pro');
+    expect(models).toContain('gemini-3.8-flash');
+    expect(models).toContain('gemini-3.6-flash');
+    expect(models).toContain('gemini-3.5-flash');
   });
 });
