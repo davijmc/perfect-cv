@@ -26,6 +26,13 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
     onUpdateContent({ ...content, summary: val });
   };
 
+  const updateKeyResult = (idx: number, val: string) => {
+    if (!onUpdateContent) return;
+    const items = [...(content.keyResults || [])];
+    items[idx] = val;
+    onUpdateContent({ ...content, keyResults: items });
+  };
+
   const updateHighlight = (expIdx: number, hIdx: number, val: string) => {
     if (!onUpdateContent) return;
     const exps = [...content.experiences];
@@ -164,6 +171,22 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
               isEditable={isEditable}
               className="text-xs text-slate-700 leading-relaxed"
             />
+          </section>
+        )}
+
+        {/* Principais Resultados */}
+        {content.keyResults?.length > 0 && (
+          <section className="space-y-1.5">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
+              Principais Resultados
+            </h2>
+            <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-slate-700">
+              {content.keyResults.map((r, idx) => (
+                <li key={idx}>
+                  <InlineText value={r} onChange={(v) => updateKeyResult(idx, v)} isEditable={isEditable} />
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

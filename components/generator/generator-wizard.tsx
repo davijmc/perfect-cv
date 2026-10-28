@@ -13,15 +13,22 @@ import {
   ArrowRight, 
   Check, 
   AlertCircle,
-  Palette
+  Palette,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
-import { TemplateId } from '@/lib/ai/schemas';
+import { TemplateId, JobAnalysisResult } from '@/lib/ai/schemas';
+import { JobAnalysisCard } from './job-analysis-card';
 
 interface GeneratorWizardProps {
   onGenerated: (resume: any) => void;
 }
 
 export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
+  // Nível de assistência: Modo Simples vs Modo Avançado
+  const [assistantLevel, setAssistantLevel] = useState<'simple' | 'advanced'>('advanced');
+
+  // Modo de objetivo, profundidade e template
   const [mode, setMode] = useState<'generic' | 'job_specific' | 'from_scratch'>('job_specific');
   const [depth, setDepth] = useState<'lean' | 'detailed'>('lean');
   const [templateId, setTemplateId] = useState<TemplateId>('modern-minimal');
@@ -32,13 +39,18 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
   const [company, setCompany] = useState('');
   const [jobDescription, setJobDescription] = useState('');
 
+  // Estados de análise de requisitos da vaga (Modo Avançado)
+  const [isAnalyzingJob, setIsAnalyzingJob] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [jobAnalysis, setJobAnalysis] = useState<JobAnalysisResult | null>(null);
+
   // Estados de scraping e geração
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Manipulador de extração de link de vaga
+  // Extração de link de vaga via scraping
   const handleScrapeJobUrl = async () => {
     if (!jobUrl || !jobUrl.startsWith('http')) {
       setScrapeError('Informe uma URL válida iniciando com http:// ou https://');
@@ -74,15 +86,60 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
     }
   };
 
-  const handleGenerate = async () => {
+  // Diagnóstico prévio de vaga (Modo Avançado)
+  const handleAnalyzeJob = async () => {
+    if (!jobDescription.trim() && !jobUrl.trim()) {
+      setAnalyzeError('Informe ao menos a descrição ou o link da vaga para realizar o diagnóstico.');
+      return;
+    }
+    setIsAnalyzingJob(true);
+    setAnalyzeError(null);
+
+    try {
+      const res = await fetch('/api/analyze-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rawDescription: jobDescription.trim(),
+          jobTitle: targetRole.trim() || undefined,
+          company: company.trim() || undefined,
+          url: jobUrl.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.analysis) {
+        setJobAnalysis(data.analysis);
+        if (data.analysis.jobTitle && !targetRole) {
+          setTargetRole(data.analysis.jobTitle);
+        }
+        if (data.analysis.company && !company) {
+          setCompany(data.analysis.company);
+        }
+      } else {
+        setAnalyzeError(data.message || 'Falha ao analisar os requisitos da vaga.');
+      }
+    } catch (err: any) {
+      setAnalyzeError('Erro na análise da vaga: ' + err.message);
+    } finally {
+      setIsAnalyzingJob(false);
+    }
+  };
+
+  // Geração do currículo final
+  const handleGenerate = async (customAnalysis?: JobAnalysisResult | null) => {
     setIsGenerating(true);
     setGenerationError(null);
+
+    const activeAnalysis = customAnalysis !== undefined ? customAnalysis : jobAnalysis;
 
     try {
       const payload = {
         mode,
         depth,
         templateId,
+        assistantLevel,
+        jobAnalysis: assistantLevel === 'advanced' ? (activeAnalysis || undefined) : undefined,
         targetRole: targetRole.trim() || undefined,
         targetJobDetails:
           mode === 'job_specific'
@@ -125,7 +182,69 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
 
   return (
     <div className="space-y-8">
-      {/* 1. Escolha do Modo de Geração */}
+      {/* 0. Escolha do Modo: Simples vs Avançado */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">0</span>
+            <span>Como você deseja gerar seu currículo?</span>
+          </h2>
+          <p className="text-xs text-slate-600">Escolha o nível de profundidade e inteligência para este currículo.</p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Modo Simples */}
+          <button
+            type="button"
+            onClick={() => {
+              setAssistantLevel('simple');
+              setJobAnalysis(null);
+            }}
+            className={`p-5 rounded-2xl border text-left transition-all relative ${
+              assistantLevel === 'simple'
+                ? 'border-blue-600 bg-blue-50/50 shadow-md ring-2 ring-blue-500/20'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                Geração rápida em 1 clique
+              </span>
+              {assistantLevel === 'simple' && <Check className="h-4 w-4 text-blue-600" />}
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">Modo Simples</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Geração ágil e direta em 1 clique sem seção de resultados. Mantém seu currículo tradicional, polido e enxuto para envio imediato.
+            </p>
+          </button>
+
+          {/* Modo Avançado */}
+          <button
+            type="button"
+            onClick={() => setAssistantLevel('advanced')}
+            className={`p-5 rounded-2xl border text-left transition-all relative ${
+              assistantLevel === 'advanced'
+                ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-500/20'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-700">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                Recomendado · Resultados & Diagnóstico
+              </span>
+              {assistantLevel === 'advanced' && <Check className="h-4 w-4 text-indigo-600" />}
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">Modo Avançado</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Diagnóstico de requisitos da vaga (destacando o que você tem e o que não tem) com opção de adequação automática e seção de Principais Resultados.
+            </p>
+          </button>
+        </div>
+      </section>
+
+      {/* 1. Escolha do Objetivo do Currículo */}
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -158,7 +277,10 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
           {/* Por Cargo / Área */}
           <button
             type="button"
-            onClick={() => setMode('generic')}
+            onClick={() => {
+              setMode('generic');
+              setJobAnalysis(null);
+            }}
             className={`p-5 rounded-2xl border text-left transition-all ${
               mode === 'generic'
                 ? 'border-blue-600 bg-blue-50/60 shadow-md ring-2 ring-blue-500/20'
@@ -177,7 +299,10 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
           {/* Do Zero / Geral */}
           <button
             type="button"
-            onClick={() => setMode('from_scratch')}
+            onClick={() => {
+              setMode('from_scratch');
+              setJobAnalysis(null);
+            }}
             className={`p-5 rounded-2xl border text-left transition-all ${
               mode === 'from_scratch'
                 ? 'border-blue-600 bg-blue-50/60 shadow-md ring-2 ring-blue-500/20'
@@ -249,7 +374,7 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
                     type="button"
                     onClick={handleScrapeJobUrl}
                     disabled={isScraping || !jobUrl}
-                    className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 transition-all disabled:opacity-50 whitespace-nowrap"
+                    className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
                   >
                     {isScraping ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Zap className="h-4 w-4 text-amber-500" />}
                     <span>Buscar Vaga</span>
@@ -284,6 +409,48 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
                   className="w-full rounded-xl border border-slate-200 p-3.5 text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
+
+              {/* Fluxo de 2 Etapas do Modo Avançado: Diagnóstico de Requisitos */}
+              {assistantLevel === 'advanced' && (
+                <div className="pt-2">
+                  {jobAnalysis ? (
+                    <JobAnalysisCard
+                      analysis={jobAnalysis}
+                      onProceed={() => handleGenerate(jobAnalysis)}
+                      isProceeding={isGenerating}
+                      onReset={() => setJobAnalysis(null)}
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={handleAnalyzeJob}
+                        disabled={isAnalyzingJob || (!jobDescription.trim() && !jobUrl.trim())}
+                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-semibold text-sm transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        {isAnalyzingJob ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                            <span>Diagnosticando requisitos e aderência com seu perfil...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                            <span>Diagnosticar Requisitos da Vaga (Ver o que tenho vs o que falta)</span>
+                          </>
+                        )}
+                      </button>
+
+                      {analyzeError && (
+                        <div className="flex items-start gap-2.5 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800">
+                          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                          <span>{analyzeError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -398,12 +565,18 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
       )}
 
       {/* Botão de Ação: Gerar Currículo */}
+      {/* Se o usuário já tiver o JobAnalysisCard exibido, a ação principal está no próprio card. 
+          Mesmo assim, mantemos o botão inferior como garantia ou para os outros modos */}
       <div className="flex justify-end pt-4">
         <button
           type="button"
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+          onClick={() => handleGenerate()}
+          disabled={isGenerating || isAnalyzingJob}
+          className={`flex items-center gap-2.5 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-xl active:scale-95 transition-all disabled:opacity-50 cursor-pointer ${
+            assistantLevel === 'advanced'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/25 hover:from-indigo-700 hover:to-purple-700'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700'
+          }`}
         >
           {isGenerating ? (
             <>
@@ -413,7 +586,11 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
           ) : (
             <>
               <Sparkles className="h-5 w-5 text-amber-300" />
-              <span>Gerar Currículo com IA</span>
+              <span>
+                {assistantLevel === 'advanced'
+                  ? (jobAnalysis ? 'Adequar e Gerar Currículo com Resultados' : 'Gerar Currículo com Resultados')
+                  : 'Gerar Currículo (Modo Simples)'}
+              </span>
               <ArrowRight className="h-5 w-5" />
             </>
           )}

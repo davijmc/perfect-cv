@@ -10,13 +10,16 @@ import {
 } from '@/lib/ai/schemas';
 import { 
   RESUME_GENERATOR_SYSTEM_PROMPT, 
-  buildGenerateResumeUserPrompt 
+  buildGenerateResumeUserPrompt,
+  buildRetryFeedback
 } from '@/lib/ai/prompts';
+import { findUnsourcedClaims } from '@/lib/ai/number-guard';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { mode, depth, targetRole, targetJobDetails, templateId } = body;
+    const { mode, depth, targetRole, targetJobDetails, templateId, assistantLevel, jobAnalysis } = body;
+    const level: 'simple' | 'advanced' = assistantLevel === 'advanced' ? 'advanced' : 'simple';
 
     // 1. Carrega o perfil profissional mestre
     const masterProfile = await loadProfile();
@@ -54,15 +57,27 @@ export async function POST(request: Request) {
       depth: depth || 'lean',
       targetRole,
       targetJobDetails,
+      assistantLevel: level,
+      jobAnalysis,
     });
 
     // 4. Executa a geração estruturada com a LLM
-    const { object: tailoredProfile } = await generateObject({
-      model: modelInstance,
-      schema: UserProfileSchema,
-      system: RESUME_GENERATOR_SYSTEM_PROMPT,
-      prompt: userPrompt,
-    });
+    const generate = async (prompt: string) => {
+      const { object } = await generateObject({
+        model: modelInstance,
+        schema: UserProfileSchema,
+        system: RESUME_GENERATOR_SYSTEM_PROMPT,
+        prompt,
+      });
+      return { ...object, keyResults: (object.keyResults ?? []).slice(0, 4) };
+    };
+
+    let tailoredProfile = await generate(userPrompt);
+    if (level === 'simple') {
+      tailoredProfile.keyResults = [];
+    }
+    // Identifica números sugeridos pela IA para destaque amigável de revisão pelo usuário no editor
+    const unverifiedClaims = findUnsourcedClaims(tailoredProfile, masterProfile);
 
     // 5. Monta o título do currículo para o histórico
     let title = 'Currículo Profissional';
@@ -88,6 +103,8 @@ export async function POST(request: Request) {
       mode: mode || 'generic',
       depth: depth || 'lean',
       templateId: chosenTemplate,
+      assistantLevel: level,
+      jobAnalysis,
       targetRole,
       targetJobDetails,
       content: {
@@ -97,6 +114,7 @@ export async function POST(request: Request) {
           photoUrl: masterProfile.personalInfo.photoUrl || tailoredProfile.personalInfo.photoUrl || '',
         },
       },
+      unverifiedClaims,
     };
 
     await saveResume(newResume);

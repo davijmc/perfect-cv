@@ -22,8 +22,18 @@ import {
   Loader2,
   Crop
 } from 'lucide-react';
-import { UserProfile, ExperienceItem, EducationItem, ProjectItem, CertificationItem, LanguageItem } from '@/lib/ai/schemas';
+import { 
+  UserProfile, 
+  ExperienceItem, 
+  EducationItem, 
+  ProjectItem, 
+  CertificationItem, 
+  LanguageItem,
+  ProfileSuggestionItem
+} from '@/lib/ai/schemas';
 import { PhotoCropModal } from './photo-crop-modal';
+import { ProfileSuggestionsTab } from './profile-suggestions-tab';
+import { applySuggestionToProfile, revertSuggestionFromProfile } from '@/lib/profile/suggestion-applier';
 
 interface ProfileFormProps {
   initialProfile: UserProfile;
@@ -33,7 +43,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormProps) {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
-  const [activeTab, setActiveTab] = useState<'personal' | 'experience' | 'education' | 'skills' | 'projects' | 'other'>('personal');
+  const [activeTab, setActiveTab] = useState<'suggestions' | 'personal' | 'experience' | 'education' | 'skills' | 'projects' | 'other'>('personal');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -302,13 +312,26 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
     setProfile({ ...profile, certifications: profile.certifications.filter((_, i) => i !== index) });
   };
 
+  const handleApplySuggestion = async (suggestion: ProfileSuggestionItem, customValue?: string) => {
+    const updated = applySuggestionToProfile(profile, suggestion, customValue);
+    setProfile(updated);
+    await onSave(updated);
+  };
+
+  const handleRevertSuggestion = async (suggestion: ProfileSuggestionItem) => {
+    const reverted = revertSuggestionFromProfile(profile, suggestion);
+    setProfile(reverted);
+    await onSave(reverted);
+  };
+
   const tabs = [
-    { id: 'personal', label: 'Dados Pessoais & Resumo', icon: User },
-    { id: 'experience', label: `Experiência (${profile.experiences.length})`, icon: Briefcase },
-    { id: 'education', label: `Educação (${profile.education.length})`, icon: GraduationCap },
-    { id: 'skills', label: 'Competências & Skills', icon: Wrench },
-    { id: 'projects', label: `Projetos (${profile.projects.length})`, icon: FolderGit2 },
-    { id: 'other', label: 'Idiomas & Certificações', icon: Languages },
+    { id: 'suggestions', label: 'Sugestões da IA', icon: Sparkles, isHighlight: true },
+    { id: 'personal', label: 'Dados Pessoais & Resumo', icon: User, isHighlight: false },
+    { id: 'experience', label: `Experiência (${profile.experiences.length})`, icon: Briefcase, isHighlight: false },
+    { id: 'education', label: `Educação (${profile.education.length})`, icon: GraduationCap, isHighlight: false },
+    { id: 'skills', label: 'Competências & Skills', icon: Wrench, isHighlight: false },
+    { id: 'projects', label: `Projetos (${profile.projects.length})`, icon: FolderGit2, isHighlight: false },
+    { id: 'other', label: 'Idiomas & Certificações', icon: Languages, isHighlight: false },
   ];
 
   return (
@@ -323,13 +346,17 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? tab.isHighlight
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm ring-2 ring-indigo-500/20'
+                    : 'bg-blue-600 text-white shadow-sm'
+                  : tab.isHighlight
+                  ? 'bg-indigo-50/70 text-indigo-700 border border-indigo-200 hover:bg-indigo-100/70'
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className={`h-4 w-4 ${tab.isHighlight && !isActive ? 'text-indigo-600' : ''}`} />
               <span>{tab.label}</span>
             </button>
           );
@@ -338,6 +365,15 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
 
       {/* Conteúdo da Aba Ativa */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+        {/* ABA: SUGESTÕES DA IA */}
+        {activeTab === 'suggestions' && (
+          <ProfileSuggestionsTab
+            profile={profile}
+            onApplySuggestion={handleApplySuggestion}
+            onRevertSuggestion={handleRevertSuggestion}
+          />
+        )}
+
         {/* ABA: DADOS PESSOAIS */}
         {activeTab === 'personal' && (
           <div className="space-y-6">

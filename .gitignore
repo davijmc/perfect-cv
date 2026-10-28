@@ -11,6 +11,7 @@ node_modules
 /out/
 /build
 /dist
+*.tsbuildinfo
 
 # Local data & credentials (STRICTLY PROTECTED)
 data/
@@ -34,3 +35,6 @@ Thumbs.db
 Notas.txt
 .agents/
 Evolucao.txt
+docs/Como melhorar o agente de currículos impacto verdadeiro sem sensacionalismo.md
+docs/referencias_melhoria_agente_curriculo.md
+docs-internos/

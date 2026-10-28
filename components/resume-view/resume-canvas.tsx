@@ -15,6 +15,7 @@ import {
 import { GeneratedResume, TemplateId, UserProfile } from '@/lib/ai/schemas';
 import { TemplateCarousel } from './template-carousel';
 import { TEMPLATE_CATALOG } from './templates';
+import { UnverifiedClaimsBanner } from './unverified-claims-banner';
 
 interface ResumeCanvasProps {
   initialResume: GeneratedResume;
@@ -79,6 +80,24 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     }
   };
 
+  const handleDismissClaims = async () => {
+    const updated: GeneratedResume = {
+      ...resume,
+      unverifiedClaims: [],
+      updatedAt: new Date().toISOString(),
+    };
+    setResume(updated);
+    try {
+      await fetch(`/api/resumes/${resume.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch {
+      // Falha silenciosa em background
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -100,7 +119,15 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     md += `* ${c.personalInfo.location || ''} | ${c.personalInfo.email || ''} | ${c.personalInfo.phone || ''}\n`;
     if (c.personalInfo.linkedinUrl) md += `* LinkedIn: ${c.personalInfo.linkedinUrl}\n`;
     if (c.personalInfo.githubUrl) md += `* GitHub: ${c.personalInfo.githubUrl}\n`;
-    md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n## Experiência Profissional\n`;
+    md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n`;
+    if (c.keyResults?.length > 0) {
+      md += `## Principais Resultados\n`;
+      c.keyResults.forEach((r) => {
+        md += `- ${r}\n`;
+      });
+      md += `\n`;
+    }
+    md += `## Experiência Profissional\n`;
 
     c.experiences.forEach((exp) => {
       md += `\n### ${exp.role} — ${exp.company}\n`;
@@ -208,6 +235,13 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
           <span>{saveBanner}</span>
         </div>
       )}
+
+      {/* Banner de Números Não Verificados no Perfil */}
+      <UnverifiedClaimsBanner
+        claims={resume.unverifiedClaims || []}
+        content={resume.content}
+        onDismiss={handleDismissClaims}
+      />
 
       {/* Carrossel de Estilos Visuais */}
       <TemplateCarousel

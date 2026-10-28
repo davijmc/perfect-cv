@@ -129,6 +129,7 @@ export const UserProfileSchema = z.object({
     photoUrl: '',
   }),
   summary: z.string().default(''),
+  keyResults: z.array(z.string()).default([]),
   experiences: z.array(ExperienceItemSchema).default([]),
   education: z.array(EducationItemSchema).default([]),
   skills: SkillsSchema.default({
@@ -142,6 +143,14 @@ export const UserProfileSchema = z.object({
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
+// Trecho gerado com número que não foi encontrado no perfil mestre
+export const UnverifiedClaimSchema = z.object({
+  path: z.string(),
+  text: z.string(),
+  numbers: z.array(z.string()).default([]),
+});
+export type UnverifiedClaim = z.infer<typeof UnverifiedClaimSchema>;
+
 // Os 5 IDs de Template do Carrossel Visual
 export const TemplateIdEnum = z.enum([
   'modern-minimal',
@@ -152,12 +161,35 @@ export const TemplateIdEnum = z.enum([
 ]);
 export type TemplateId = z.infer<typeof TemplateIdEnum>;
 
+// Status de comprovação de requisitos da vaga contra o perfil
+export const RequirementStatusEnum = z.enum(['supported', 'partial', 'not_supported']);
+export type RequirementStatus = z.infer<typeof RequirementStatusEnum>;
+
+export const JobRequirementItemSchema = z.object({
+  text: z.string(),
+  category: z.enum(['tech', 'experience', 'soft_skill', 'education', 'general']).default('general'),
+  importance: z.enum(['required', 'desired']).default('required'),
+  status: RequirementStatusEnum,
+  evidence: z.string().optional().default(''),
+});
+export type JobRequirementItem = z.infer<typeof JobRequirementItemSchema>;
+
+export const JobAnalysisResultSchema = z.object({
+  jobTitle: z.string().default(''),
+  company: z.string().optional(),
+  summary: z.string().default(''),
+  requirements: z.array(JobRequirementItemSchema).default([]),
+  matchPercentage: z.number().min(0).max(100).default(0),
+});
+export type JobAnalysisResult = z.infer<typeof JobAnalysisResultSchema>;
+
 // Modelo de Currículo Gerado (salvo em data/resumes/[id].json)
 export const GeneratedResumeSchema = z.object({
   id: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
   title: z.string(),
+  assistantLevel: z.enum(['simple', 'advanced']).default('simple'),
   mode: z.enum(['generic', 'job_specific', 'from_scratch']).default('generic'),
   depth: z.enum(['lean', 'detailed']).default('lean'),
   templateId: TemplateIdEnum.default('modern-minimal'),
@@ -170,6 +202,41 @@ export const GeneratedResumeSchema = z.object({
       rawDescription: z.string().optional(),
     })
     .optional(),
+  jobAnalysis: JobAnalysisResultSchema.optional(),
   content: UserProfileSchema,
+  unverifiedClaims: z.array(UnverifiedClaimSchema).default([]),
 });
 export type GeneratedResume = z.infer<typeof GeneratedResumeSchema>;
+
+// ==========================================
+// Copiloto de Sugestões de Edição do Perfil
+// ==========================================
+export const SuggestionTypeEnum = z.enum([
+  'grammar_style',
+  'add_skill',
+  'remove_skill',
+  'improve_highlight',
+  'improve_summary',
+]);
+export type SuggestionType = z.infer<typeof SuggestionTypeEnum>;
+
+export const ProfileSuggestionItemSchema = z.object({
+  id: z.string(),
+  type: SuggestionTypeEnum,
+  title: z.string(),
+  reason: z.string(),
+  targetField: z.string(),
+  targetIndex: z.number().optional(),
+  subIndex: z.number().optional(),
+  originalValue: z.string().optional(),
+  suggestedValue: z.string(),
+  skillCategory: z.enum(['technical', 'toolsAndCloud', 'softSkills']).optional(),
+  status: z.enum(['pending', 'accepted', 'rejected']).default('pending'),
+});
+export type ProfileSuggestionItem = z.infer<typeof ProfileSuggestionItemSchema>;
+
+export const ProfileSuggestionsResponseSchema = z.object({
+  overallSummary: z.string().default(''),
+  suggestions: z.array(ProfileSuggestionItemSchema).default([]),
+});
+export type ProfileSuggestionsResponse = z.infer<typeof ProfileSuggestionsResponseSchema>;

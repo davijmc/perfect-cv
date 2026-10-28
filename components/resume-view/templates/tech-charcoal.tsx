@@ -26,6 +26,13 @@ export function TechCharcoalTemplate({ content, onUpdateContent, isEditable = tr
     onUpdateContent({ ...content, summary: val });
   };
 
+  const updateKeyResult = (idx: number, val: string) => {
+    if (!onUpdateContent) return;
+    const items = [...(content.keyResults || [])];
+    items[idx] = val;
+    onUpdateContent({ ...content, keyResults: items });
+  };
+
   const updateHighlight = (expIdx: number, hIdx: number, val: string) => {
     if (!onUpdateContent) return;
     const exps = [...content.experiences];
@@ -83,6 +90,22 @@ export function TechCharcoalTemplate({ content, onUpdateContent, isEditable = tr
               isEditable={isEditable}
               className="text-xs text-zinc-700 leading-relaxed"
             />
+          </section>
+        )}
+
+        {/* Principais Resultados */}
+        {content.keyResults?.length > 0 && (
+          <section className="space-y-1.5">
+            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-zinc-900 flex items-center gap-2">
+              <span className="text-emerald-500">##</span> Principais Resultados
+            </h2>
+            <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-zinc-700">
+              {content.keyResults.map((r, idx) => (
+                <li key={idx}>
+                  <InlineText value={r} onChange={(v) => updateKeyResult(idx, v)} isEditable={isEditable} />
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
