@@ -19,9 +19,11 @@ import {
   Link as LinkIcon,
   Camera,
   Upload,
-  Loader2
+  Loader2,
+  Crop
 } from 'lucide-react';
 import { UserProfile, ExperienceItem, EducationItem, ProjectItem, CertificationItem, LanguageItem } from '@/lib/ai/schemas';
+import { PhotoCropModal } from './photo-crop-modal';
 
 interface ProfileFormProps {
   initialProfile: UserProfile;
@@ -36,31 +38,43 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   // Atualiza estado local quando initialProfile mudar (ex: após upload de CV)
   React.useEffect(() => {
     setProfile(initialProfile);
   }, [initialProfile]);
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Carrega imagem sem limite de tamanho e abre o enquadrador 3x4
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setPhotoError('Por favor, selecione uma imagem válida (PNG, JPG ou WebP).');
+      setPhotoError('Por favor, selecione um arquivo de imagem (PNG, JPG, WebP, etc.).');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setPhotoError('A imagem deve ter no máximo 5MB.');
-      return;
-    }
+    setPhotoError(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setCropImageSrc(event.target.result as string);
+        setIsCropModalOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
 
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setIsUploadingPhoto(true);
     setPhotoError(null);
     try {
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append('photo', croppedBlob, 'profile-photo-3x4.jpg');
 
       const res = await fetch('/api/profile/photo', {
         method: 'POST',
@@ -70,14 +84,22 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
       const data = await res.json();
       if (data.success && data.photoUrl) {
         handlePersonalChange('photoUrl', data.photoUrl);
+        setIsCropModalOpen(false);
+        setCropImageSrc(null);
       } else {
-        setPhotoError(data.message || 'Falha ao salvar foto.');
+        setPhotoError(data.message || 'Falha ao salvar foto recortada.');
       }
     } catch (err: any) {
       setPhotoError('Erro ao enviar foto: ' + err.message);
     } finally {
       setIsUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleOpenCurrentPhotoCrop = () => {
+    if (profile.personalInfo.photoUrl) {
+      setCropImageSrc(profile.personalInfo.photoUrl);
+      setIsCropModalOpen(true);
     }
   };
 
@@ -360,7 +382,7 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
                     </span>
                   </h4>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Adicione uma foto no padrão 3x4 para exibir no cabeçalho dos seus currículos. Arquivos suportados: JPG, PNG ou WebP (máx. 5MB). Fica salva de forma privada no seu computador em <code className="font-mono text-[11px] bg-slate-200/70 px-1 py-0.5 rounded">data/</code>.
+                    Adicione uma foto no padrão 3x4 para exibir no cabeçalho dos seus currículos. Sem limite de tamanho de arquivo — você ajusta o zoom e recorte interativamente. Fica salva de forma privada em <code className="font-mono text-[11px] bg-slate-200/70 px-1 py-0.5 rounded">data/</code>.
                   </p>
                 </div>
 
@@ -368,7 +390,7 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png, image/jpeg, image/webp"
+                    accept="image/*"
                     onChange={handlePhotoSelect}
                     className="hidden"
                   />
@@ -379,19 +401,32 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
                     className="flex items-center gap-1.5 rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-xs disabled:opacity-50"
                   >
                     <Upload className="h-3.5 w-3.5 text-blue-600" />
-                    <span>{profile.personalInfo.photoUrl ? 'Trocar Foto' : 'Fazer Upload de Foto'}</span>
+                    <span>{profile.personalInfo.photoUrl ? 'Substituir Foto' : 'Fazer Upload de Foto'}</span>
                   </button>
 
                   {profile.personalInfo.photoUrl && (
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      disabled={isUploadingPhoto}
-                      className="flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-all shadow-xs disabled:opacity-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span>Remover</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleOpenCurrentPhotoCrop}
+                        disabled={isUploadingPhoto}
+                        className="flex items-center gap-1.5 rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-xs disabled:opacity-50"
+                        title="Ajustar enquadramento 3x4"
+                      >
+                        <Crop className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Reenquadrar 3x4</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        disabled={isUploadingPhoto}
+                        className="flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-all shadow-xs disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Remover</span>
+                      </button>
+                    </>
                   )}
                 </div>
 
@@ -1028,6 +1063,18 @@ export function ProfileForm({ initialProfile, onSave, isSaving }: ProfileFormPro
           </button>
         </div>
       </div>
+
+      {/* Modal Interativo de Recorte 3x4 */}
+      {isCropModalOpen && cropImageSrc && (
+        <PhotoCropModal
+          imageSrc={cropImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropModalOpen(false);
+            setCropImageSrc(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,9 +3,11 @@ import { generateObject } from 'ai';
 import { extractTextFromPdf } from '@/lib/parser/pdf-parser';
 import { extractTextFromDocx } from '@/lib/parser/docx-parser';
 import { getAIModelInstance } from '@/lib/ai/client';
-import { loadConfig } from '@/lib/storage/fs-storage';
+import { loadConfig, loadProfile, saveProfile } from '@/lib/storage/fs-storage';
 import { UserProfileSchema } from '@/lib/ai/schemas';
 import { CV_PARSER_SYSTEM_PROMPT } from '@/lib/ai/prompts';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -71,9 +73,18 @@ export async function POST(request: Request) {
       prompt: `Analise o currículo bruto a seguir e preencha todos os campos do perfil profissional com rigor e fidelidade:\n\n"""\n${extractedText}\n"""`,
     });
 
+    // Preserva foto de perfil anterior se existir
+    const existing = await loadProfile();
+    if (existing?.personalInfo?.photoUrl) {
+      structuredProfile.personalInfo.photoUrl = existing.personalInfo.photoUrl;
+    }
+
+    // Salva automaticamente o perfil mestre em data/profile.json
+    await saveProfile(structuredProfile);
+
     return NextResponse.json({
       success: true,
-      message: 'Currículo processado e dados extraídos com sucesso!',
+      message: 'Currículo processado e salvo automaticamente no seu perfil mestre!',
       profile: structuredProfile,
       rawTextLength: extractedText.length,
     });

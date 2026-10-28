@@ -8,15 +8,16 @@ import { UserProfile, UserProfileSchema } from '@/lib/ai/schemas';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileVersion, setProfileVersion] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
-  // Carrega perfil inicial do disco
+  // Carrega perfil inicial do disco sem cache
   useEffect(() => {
     async function loadInitialProfile() {
       try {
-        const res = await fetch('/api/profile');
+        const res = await fetch('/api/profile', { cache: 'no-store' });
         const data = await res.json();
         if (data.success && data.profile) {
           setProfile(data.profile);
@@ -59,6 +60,9 @@ export default function ProfilePage() {
 
   const handleProfileExtracted = (extracted: UserProfile) => {
     setProfile(extracted);
+    setProfileVersion((prev) => prev + 1);
+    setSuccessBanner('Currículo lido com sucesso e dados salvos no seu perfil!');
+    setTimeout(() => setSuccessBanner(null), 5000);
   };
 
   if (isLoading || !profile) {
@@ -98,7 +102,7 @@ export default function ProfilePage() {
 
       {/* Formulário Modular Completo */}
       <section>
-        <ProfileForm initialProfile={profile} onSave={handleSave} isSaving={isSaving} />
+        <ProfileForm key={profileVersion} initialProfile={profile} onSave={handleSave} isSaving={isSaving} />
       </section>
     </div>
   );

@@ -2,13 +2,22 @@ import { NextResponse } from 'next/server';
 import { loadProfile, saveProfile } from '@/lib/storage/fs-storage';
 import { UserProfileSchema } from '@/lib/ai/schemas';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const profile = await loadProfile();
-    return NextResponse.json({
-      success: true,
-      profile: profile || UserProfileSchema.parse({}),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        profile: profile || UserProfileSchema.parse({}),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error?.message || 'Erro ao carregar perfil.' },
