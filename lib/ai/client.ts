@@ -8,7 +8,7 @@ import { AIProvider, AppConfig } from '@/lib/ai/schemas';
  * Modelos padrão recomendados por provedor
  */
 export const DEFAULT_MODELS: Record<AIProvider, string> = {
-  gemini: 'gemini-1.5-flash',
+  gemini: 'gemini-3.8-flash',
   openai: 'gpt-4o',
   anthropic: 'claude-3-5-sonnet-latest',
   groq: 'llama-3.3-70b-versatile',
@@ -32,7 +32,7 @@ export function resolveModelId(provider: AIProvider, model?: string): string {
   if (model && model.trim().length > 0) {
     return model.trim();
   }
-  return DEFAULT_MODELS[provider] || 'gemini-1.5-flash';
+  return DEFAULT_MODELS[provider] || 'gemini-3.8-flash';
 }
 
 /**
@@ -169,3 +169,45 @@ export async function testProviderConnection(
     };
   }
 }
+
+/**
+ * Consulta o endpoint ModelService.ListModels da API do Google Gemini
+ * e retorna os modelos disponíveis que suportam o método generateContent.
+ */
+export async function listGeminiModelsFromApi(apiKey?: string): Promise<string[]> {
+  const fallback = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  if (!apiKey || apiKey.trim().length === 0) {
+    return fallback;
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      return fallback;
+    }
+
+    const data = await res.json();
+    if (!data.models || !Array.isArray(data.models)) {
+      return fallback;
+    }
+
+    // Filtra modelos disponíveis que suportam generateContent
+    const supported = data.models
+      .filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+      .map((m: any) => m.name.replace(/^models\//, ''))
+      .filter((name: string) => !name.includes('embedding') && !name.includes('aqa'));
+
+    // Pega os 3 mais relevantes (dando preferência aos modelos flash e pro)
+    const priority = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    const matched = priority.filter((p) => supported.includes(p));
+    const others = supported.filter((s: string) => !matched.includes(s));
+
+    const finalTop3 = [...matched, ...others].slice(0, 3);
+    return finalTop3.length > 0 ? finalTop3 : fallback;
+  } catch (error) {
+    console.warn('Erro ao chamar ModelService.ListModels:', error);
+    return fallback;
+  }
+}
+

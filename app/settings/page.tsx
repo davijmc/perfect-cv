@@ -12,9 +12,10 @@ import {
   Save, 
   Eye, 
   EyeOff, 
-  ShieldCheck, 
+  ShieldCheck,
   Zap, 
-  Globe
+  Globe,
+  RefreshCw
 } from 'lucide-react';
 import { PROVIDERS_META, ProviderMeta } from '@/components/settings/provider-data';
 import { AIProvider, AppConfig } from '@/lib/ai/schemas';
@@ -26,6 +27,8 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
+  const [dynamicModels, setDynamicModels] = useState<Record<string, string[]>>({});
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -104,6 +107,29 @@ export default function SettingsPage() {
     }
   };
 
+  const handleFetchLiveModels = async () => {
+    if (!currentProviderConfig.apiKey) return;
+    setIsFetchingModels(true);
+    try {
+      const res = await fetch('/api/config/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          apiKey: currentProviderConfig.apiKey,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.models?.length > 0) {
+        setDynamicModels((prev) => ({ ...prev, [selectedProvider]: data.models }));
+      }
+    } catch (err) {
+      console.error('Erro ao consultar ModelService.ListModels:', err);
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
+
   const handleTestConnection = async () => {
     setIsTesting(true);
     setTestResult(null);
@@ -120,6 +146,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       setTestResult(data);
+      if (data.success && selectedProvider === 'gemini') {
+        handleFetchLiveModels();
+      }
     } catch (err: any) {
       setTestResult({
         success: false,
@@ -307,23 +336,42 @@ export default function SettingsPage() {
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-mono text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               />
 
-              {/* Chips de Modelos Populares */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-slate-500">Sugestões:</span>
-                {currentMeta.popularModels.map((m) => (
+              {/* Chips de Modelos Populares / Dinâmicos via ListModels */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium">Sugestões (3 Modelos):</span>
+                  {(dynamicModels[selectedProvider] || currentMeta.popularModels).slice(0, 3).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => handleFieldChange('model', m)}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-mono transition-all ${
+                        currentProviderConfig.model === m
+                          ? 'bg-blue-600 text-white font-bold shadow-sm'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+
+                {selectedProvider === 'gemini' && (
                   <button
-                    key={m}
                     type="button"
-                    onClick={() => handleFieldChange('model', m)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-mono transition-all ${
-                      currentProviderConfig.model === m
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                    onClick={handleFetchLiveModels}
+                    disabled={isFetchingModels || !currentProviderConfig.apiKey}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors disabled:opacity-40"
+                    title="Chama ModelService.ListModels para consultar os métodos suportados de cada modelo"
                   >
-                    {m}
+                    {isFetchingModels ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    <span>Consultar ListModels</span>
                   </button>
-                ))}
+                )}
               </div>
             </div>
 
