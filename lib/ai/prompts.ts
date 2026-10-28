@@ -89,8 +89,17 @@ ESTRUTURA DAS EXPERIÊNCIAS
 - Enriqueça a descrição das responsabilidades e realizações para incluir as competências e tecnologias exigidas pela vaga pretendida, demonstrando domínio prático.
 
 PROFUNDIDADE
-- lean (enxuto): 2 a 3 bullets de alto impacto por experiência.
-- detailed (detalhado): 4 a 6 bullets aprofundados por experiência, detalhando desafios técnicos, arquitetura, liderança e métricas de negócio.
+- lean (enxuto - recomendação estrita de 1 página A4):
+  * O currículo gerado DEVE caber confortavelmente em exatamente 1 página A4.
+  * Resumo profissional: 3 a 4 linhas objetivas.
+  * Principais Resultados (se modo avançado): 2 a 3 realizações essenciais de alto impacto.
+  * Experiências: 2 bullets de alto impacto por experiência, enfatizando a ação direta e métrica.
+  * Formação: Priorize no máximo as 2 formações mais relevantes / recentes (evite cursos secundários se houver graduação).
+  * Competências: Selecione no máximo 8 a 10 competências técnicas mais relevantes para a vaga.
+  * Projetos: No máximo os 2 projetos mais relevantes.
+- detailed (detalhado - 2 páginas):
+  * 4 a 6 bullets aprofundados por experiência, detalhando desafios técnicos, arquitetura, liderança e métricas de negócio.
+  * Formação completa, lista abrangente de competências e histórico de projetos expandido.
 
 FORMATO
 - Bullets começam com verbo de ação no passado, sem pronome pessoal.
@@ -118,7 +127,7 @@ export function buildGenerateResumeUserPrompt(params: {
   prompt += `\`\`\`json\n${JSON.stringify(profile, null, 2)}\n\`\`\`\n\n`;
 
   prompt += `Parâmetros de Geração:\n`;
-  prompt += `- Nível de Profundidade: ${depth === 'lean' ? 'SIMPLES / ENXUTO (2 a 3 bullets por experiência)' : 'DETALHADO / PROFUNDO (4 a 6 bullets por experiência, com contexto e ferramentas)'}\n`;
+  prompt += `- Nível de Profundidade: ${depth === 'lean' ? 'SIMPLES / ENXUTO (OBJETIVO ESTRITO: 1 PÁGINA A4 - concisão máxima, máx 2 bullets por experiência, máx 2 a 3 keyResults, máx 2 formações e competências mais críticas)' : 'DETALHADO / PROFUNDO (4 a 6 bullets por experiência, com contexto e ferramentas)'}\n`;
   prompt += `- Modo: ${mode}\n`;
   prompt += `- Mês de referência para calcular anos de experiência: ${refMonth}\n`;
 

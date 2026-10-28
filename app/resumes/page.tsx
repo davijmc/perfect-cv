@@ -8,6 +8,7 @@ import {
   FileText, 
   Sparkles, 
   Calendar, 
+  Clock,
   Trash2, 
   Copy, 
   ExternalLink, 
@@ -164,10 +165,15 @@ export default function ResumesLibraryPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredResumes.map((cv) => {
             const templateMeta = TEMPLATE_CATALOG[cv.templateId] || TEMPLATE_CATALOG['modern-minimal'];
-            const formattedDate = new Date(cv.updatedAt || cv.createdAt).toLocaleDateString('pt-BR', {
+            const createdDateObj = new Date(cv.createdAt || cv.updatedAt);
+            const formattedDate = createdDateObj.toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
+            });
+            const formattedTime = createdDateObj.toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
             });
 
             return (
@@ -195,8 +201,8 @@ export default function ResumesLibraryPage() {
                       {cv.title}
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>Atualizado em {formattedDate}</span>
+                      <Clock className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Gerado em {formattedDate} às {formattedTime}</span>
                     </p>
                   </div>
                 </div>

@@ -4,13 +4,21 @@ import React from 'react';
 import { UserProfile } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 
+import { TemplateDensity } from './index';
+
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
+  density?: TemplateDensity;
 }
 
-export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = true }: TemplateProps) {
+export function ExecutiveSlateTemplate({ 
+  content, 
+  onUpdateContent, 
+  isEditable = true,
+  density = 'normal'
+}: TemplateProps) {
   const p = content.personalInfo;
 
   const updatePersonal = (field: string, val: string) => {
@@ -40,15 +48,23 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
     onUpdateContent({ ...content, experiences: exps });
   };
 
+  const isCompact = density === 'compact';
+  const isComfortable = density === 'comfortable';
+
+  const sidebarPadding = isCompact ? 'p-5' : isComfortable ? 'p-8' : 'p-6';
+  const sidebarSpacing = isCompact ? 'space-y-3.5' : isComfortable ? 'space-y-6' : 'space-y-4.5';
+  const mainPadding = isCompact ? 'p-5' : isComfortable ? 'p-8' : 'p-6';
+  const mainSpacing = isCompact ? 'space-y-3' : isComfortable ? 'space-y-6' : 'space-y-4.5';
+
   return (
     <div className="a4-page flex min-h-[297mm] bg-white font-sans text-xs text-slate-800">
       {/* Coluna Esquerda: Barra Lateral Slate (32% largura) */}
-      <aside className="w-[32%] bg-slate-50 p-8 border-r border-slate-200 flex flex-col justify-between">
-        <div className="space-y-6">
+      <aside className={`w-[32%] bg-slate-50 ${sidebarPadding} border-r border-slate-200 flex flex-col justify-between`}>
+        <div className={sidebarSpacing}>
           {/* Foto de Perfil 3x4 (Facultativo) */}
           {p.photoUrl && (
-            <div className="flex flex-col items-center pb-4 mb-1 border-b border-slate-200/70">
-              <div className="w-[90px] h-[120px] overflow-hidden rounded-2xl border-2 border-white shadow-md ring-1 ring-slate-200/80 bg-white">
+            <div className={`flex flex-col items-center ${isCompact ? 'pb-2 mb-0.5' : 'pb-4 mb-1'} border-b border-slate-200/70`}>
+              <div className={`${isCompact ? 'w-[81px] h-[108px]' : isComfortable ? 'w-[99px] h-[132px]' : 'w-[90px] h-[120px]'} overflow-hidden rounded-2xl border-2 border-white shadow-md ring-1 ring-slate-200/80 bg-white`}>
                 <img
                   src={p.photoUrl}
                   alt={p.fullName || 'Foto de Perfil'}
@@ -147,13 +163,13 @@ export function ExecutiveSlateTemplate({ content, onUpdateContent, isEditable = 
       </aside>
 
       {/* Coluna Direita: Conteúdo Principal (68% largura) */}
-      <main className="w-[68%] p-8 space-y-6">
+      <main className={`w-[68%] ${mainPadding} ${mainSpacing}`}>
         {/* Cabeçalho */}
-        <header className="border-b border-slate-200 pb-4">
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">
+        <header className={`border-b border-slate-200 ${isCompact ? 'pb-2.5' : 'pb-4'}`}>
+          <h1 className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold uppercase tracking-tight text-slate-900`}>
             <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
           </h1>
-          <p className="text-sm font-semibold text-blue-900 mt-0.5">
+          <p className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-blue-900 mt-0.5`}>
             <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
           </p>
         </header>

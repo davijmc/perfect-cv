@@ -4,13 +4,21 @@ import React from 'react';
 import { UserProfile } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 
+import { TemplateDensity } from './index';
+
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
+  density?: TemplateDensity;
 }
 
-export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = true }: TemplateProps) {
+export function ClassicSerifTemplate({ 
+  content, 
+  onUpdateContent, 
+  isEditable = true,
+  density = 'normal'
+}: TemplateProps) {
   const p = content.personalInfo;
 
   const updatePersonal = (field: string, val: string) => {
@@ -40,13 +48,20 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
     onUpdateContent({ ...content, experiences: exps });
   };
 
+  const isCompact = density === 'compact';
+  const isComfortable = density === 'comfortable';
+
+  const pagePadding = isCompact ? 'p-7 sm:p-8' : isComfortable ? 'p-12' : 'p-9';
+  const sectionMargin = isCompact ? 'mb-3' : isComfortable ? 'mb-5' : 'mb-4';
+  const bulletSpacing = isCompact ? 'space-y-0.5 text-[11px]' : 'space-y-1 text-xs';
+
   return (
-    <div className="a4-page p-12 text-stone-900 font-serif leading-relaxed text-xs bg-[#fafafa]">
+    <div className={`a4-page ${pagePadding} text-stone-900 font-serif leading-relaxed text-xs bg-[#fafafa]`}>
       {/* Cabeçalho Centralizado Clássico */}
-      <header className="border-b border-stone-400 pb-5 mb-6 text-center">
+      <header className={`border-b border-stone-400 ${isCompact ? 'pb-3 mb-3' : isComfortable ? 'pb-5 mb-6' : 'pb-4 mb-4.5'} text-center`}>
         {p.photoUrl && (
-          <div className="flex justify-center mb-4">
-            <div className="w-[84px] h-[112px] sm:w-[90px] sm:h-[120px] overflow-hidden rounded-2xl border-2 border-stone-400/80 p-0.5 bg-white shadow-xs">
+          <div className={`flex justify-center ${isCompact ? 'mb-2' : 'mb-4'}`}>
+            <div className={`${isCompact ? 'w-[75px] h-[100px]' : isComfortable ? 'w-[96px] h-[128px]' : 'w-[87px] h-[116px]'} overflow-hidden rounded-2xl border-2 border-stone-400/80 p-0.5 bg-white shadow-xs`}>
               <img
                 src={p.photoUrl}
                 alt={p.fullName || 'Foto de Perfil'}
@@ -56,10 +71,10 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
           </div>
         )}
 
-        <h1 className="text-3xl font-normal tracking-wide text-stone-950 font-serif">
+        <h1 className={`${isCompact ? 'text-2xl' : 'text-3xl'} font-normal tracking-wide text-stone-950 font-serif`}>
           <InlineText value={p.fullName} onChange={(v) => updatePersonal('fullName', v)} isEditable={isEditable} />
         </h1>
-        <p className="text-sm font-sans italic text-stone-700 mt-1">
+        <p className={`${isCompact ? 'text-xs' : 'text-sm'} font-sans italic text-stone-700 mt-0.5`}>
           <InlineText value={p.title} onChange={(v) => updatePersonal('title', v)} isEditable={isEditable} />
         </p>
 
@@ -73,8 +88,8 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
 
       {/* Resumo */}
       {content.summary && (
-        <section className="mb-5">
-          <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-2 text-center">
+        <section className={sectionMargin}>
+          <h2 className={`text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 ${isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-2'} text-center`}>
             Resumo Profissional
           </h2>
           <InlineText
@@ -82,18 +97,18 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
             value={content.summary}
             onChange={updateSummary}
             isEditable={isEditable}
-            className="text-xs text-stone-800 text-justify leading-relaxed"
+            className={`text-stone-800 text-justify ${isCompact ? 'text-[11px] leading-snug' : 'text-xs leading-relaxed'}`}
           />
         </section>
       )}
 
       {/* Principais Resultados */}
       {content.keyResults?.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-2 text-center">
+        <section className={sectionMargin}>
+          <h2 className={`text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 ${isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-2'} text-center`}>
             Principais Resultados
           </h2>
-          <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-stone-800">
+          <ul className={`list-disc list-outside ml-4 text-stone-800 ${bulletSpacing}`}>
             {content.keyResults.map((r, idx) => (
               <li key={idx}>
                 <InlineText value={r} onChange={(v) => updateKeyResult(idx, v)} isEditable={isEditable} />
@@ -105,26 +120,26 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
 
       {/* Experiências */}
       {content.experiences.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-3 text-center">
+        <section className={sectionMargin}>
+          <h2 className={`text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 ${isCompact ? 'pb-0.5 mb-1.5' : 'pb-1 mb-3'} text-center`}>
             Experiência Profissional
           </h2>
 
-          <div className="space-y-4">
+          <div className={isCompact ? 'space-y-2' : 'space-y-4'}>
             {content.experiences.map((exp, expIdx) => (
               <div key={exp.id || expIdx}>
                 <div className="flex justify-between items-baseline font-sans">
                   <span className="font-bold text-xs text-stone-950">{exp.company}</span>
-                  <span className="text-[11px] italic text-stone-600">
+                  <span className="text-[10.5px] italic text-stone-600">
                     {exp.startDate} – {exp.isCurrent ? 'Presente' : exp.endDate}
                   </span>
                 </div>
-                <div className="flex justify-between items-baseline text-[11px] text-stone-700 font-sans italic mb-1">
+                <div className="flex justify-between items-baseline text-[10.5px] text-stone-700 font-sans italic mb-0.5">
                   <span>{exp.role}</span>
                   {exp.location && <span>{exp.location}</span>}
                 </div>
 
-                <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-stone-800">
+                <ul className={`list-disc list-outside ml-4 text-stone-800 ${bulletSpacing}`}>
                   {exp.highlights.map((h, hIdx) => (
                     <li key={hIdx}>
                       <InlineText
@@ -143,18 +158,18 @@ export function ClassicSerifTemplate({ content, onUpdateContent, isEditable = tr
 
       {/* Formação Acadêmica */}
       {content.education.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-2 text-center">
+        <section className={sectionMargin}>
+          <h2 className={`text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 ${isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-2'} text-center`}>
             Formação Acadêmica
           </h2>
 
-          <div className="space-y-2">
+          <div className={isCompact ? 'space-y-1' : 'space-y-2'}>
             {content.education.map((edu, idx) => (
               <div key={idx} className="flex justify-between items-baseline font-sans text-xs">
                 <div>
                   <span className="font-bold text-stone-900">{edu.institution}</span> — {edu.degree} em {edu.fieldOfStudy}
                 </div>
-                <span className="text-[11px] text-stone-600">{edu.endDate}</span>
+                <span className="text-[10.5px] text-stone-600">{edu.endDate}</span>
               </div>
             ))}
           </div>

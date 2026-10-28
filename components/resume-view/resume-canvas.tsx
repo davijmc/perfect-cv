@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Printer, 
   Copy, 
@@ -10,11 +10,13 @@ import {
   Check, 
   Sparkles, 
   Loader2,
-  FileText
+  FileText,
+  Sliders,
+  AlertTriangle
 } from 'lucide-react';
 import { GeneratedResume, TemplateId, UserProfile } from '@/lib/ai/schemas';
 import { TemplateCarousel } from './template-carousel';
-import { TEMPLATE_CATALOG } from './templates';
+import { TEMPLATE_CATALOG, TemplateDensity } from './templates';
 import { UnverifiedClaimsBanner } from './unverified-claims-banner';
 
 interface ResumeCanvasProps {
@@ -24,9 +26,35 @@ interface ResumeCanvasProps {
 
 export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   const [resume, setResume] = useState<GeneratedResume>(initialResume);
+  const [density, setDensity] = useState<TemplateDensity>(initialResume.depth === 'lean' ? 'compact' : 'normal');
+  const [forceOnePage, setForceOnePage] = useState(initialResume.depth === 'lean');
   const [isSaving, setIsSaving] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
+
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  const [pageHeight, setPageHeight] = useState<number>(0);
+
+  // 297mm em 96 DPI padrão do navegador é 1122.5px
+  const A4_HEIGHT_PX = 1122.5;
+
+  useEffect(() => {
+    const el = pageContainerRef.current?.querySelector('.a4-page') as HTMLElement | null;
+    if (!el) return;
+
+    const measure = () => {
+      setPageHeight(el.getBoundingClientRect().height);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [resume, density]);
+
+  const estimatedPages = pageHeight > 0 ? Math.ceil(pageHeight / A4_HEIGHT_PX) : 1;
+  const isSinglePage = pageHeight > 0 && pageHeight <= (A4_HEIGHT_PX + 4);
+  const fullnessPercentage = Math.min(100, Math.round((pageHeight / A4_HEIGHT_PX) * 100));
 
   const currentTemplate = TEMPLATE_CATALOG[resume.templateId] || TEMPLATE_CATALOG['modern-minimal'];
   const TemplateRenderer = currentTemplate.component;
@@ -159,73 +187,161 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   return (
     <div className="space-y-6 pb-20">
       {/* Barra de Ações Superior (Oculta na Impressão) */}
-      <div className="no-print sticky top-16 z-40 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 backdrop-blur-md shadow-md">
-        <div className="flex items-center gap-3">
-          {onBack && (
+      <div className="no-print sticky top-16 z-40 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 backdrop-blur-md shadow-md">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Voltar</span>
+              </button>
+            )}
+
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                {resume.title}
+              </h2>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                <span className="capitalize">Modo: {resume.mode}</span>
+                <span>•</span>
+                <span className="capitalize">Profundidade: {resume.depth}</span>
+                {resume.createdAt && (
+                  <>
+                    <span>•</span>
+                    <span>Gerado às {new Date(resume.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ({new Date(resume.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})</span>
+                  </>
+                )}
+                <span>•</span>
+                <span className="font-semibold text-blue-600">Dica: clique em qualquer texto para editar</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={onBack}
-              className="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              onClick={handleCopyMarkdown}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              title="Copiar texto estruturado em Markdown"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Voltar</span>
+              {copiedMd ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              <span>{copiedMd ? 'Copiado!' : 'Markdown'}</span>
             </button>
-          )}
 
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
-              {resume.title}
-            </h2>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500">
-              <span className="capitalize">Modo: {resume.mode}</span>
-              <span>•</span>
-              <span className="capitalize">Profundidade: {resume.depth}</span>
-              <span>•</span>
-              <span className="font-semibold text-blue-600">Dica: clique em qualquer texto para editar</span>
-            </div>
+            <button
+              type="button"
+              onClick={handleDownloadJson}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              title="Baixar arquivo JSON completo"
+            >
+              <Download className="h-4 w-4" />
+              <span>JSON</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <span>Salvar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
+              title="Abrir diálogo de impressão e salvar como PDF"
+            >
+              <Printer className="h-4 w-4" />
+              <span>Exportar PDF</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyMarkdown}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-            title="Copiar texto estruturado em Markdown"
-          >
-            {copiedMd ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-            <span>{copiedMd ? 'Copiado!' : 'Markdown'}</span>
-          </button>
+        {/* Linha de Controle de Diagramação e Enquadramento A4 */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status da Página A4 */}
+            {pageHeight > 0 && (
+              isSinglePage ? (
+                <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>1 Página A4 perfeita ({fullnessPercentage}% preenchida)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span>Ocupando {estimatedPages} páginas ({Math.round((pageHeight / A4_HEIGHT_PX) * 100)}% de 1 folha)</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDensity('compact');
+                      setForceOnePage(true);
+                    }}
+                    className="ml-1 rounded-md bg-amber-200/70 hover:bg-amber-200 px-2 py-0.5 font-bold text-amber-900 transition-colors cursor-pointer"
+                  >
+                    Ajustar para 1 página
+                  </button>
+                </div>
+              )
+            )}
 
-          <button
-            type="button"
-            onClick={handleDownloadJson}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-            title="Baixar arquivo JSON completo"
-          >
-            <Download className="h-4 w-4" />
-            <span>JSON</span>
-          </button>
+            {/* Seletor de Densidade */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <span className="px-2 text-[11px] font-semibold text-slate-500">Espaçamento:</span>
+              <button
+                type="button"
+                onClick={() => setDensity('compact')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  density === 'compact'
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Reduz margens e entrelinha para caber em 1 página"
+              >
+                Compacto (1 Pág)
+              </button>
+              <button
+                type="button"
+                onClick={() => setDensity('normal')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  density === 'normal'
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                onClick={() => setDensity('comfortable')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  density === 'comfortable'
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Confortável
+              </button>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span>Salvar</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all"
-            title="Abrir diálogo de impressão e salvar como PDF"
-          >
-            <Printer className="h-4 w-4" />
-            <span>Exportar PDF</span>
-          </button>
+          {/* Opção de travar 1 página estrita no PDF */}
+          <label className="flex items-center gap-2 text-slate-700 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={forceOnePage}
+              onChange={(e) => setForceOnePage(e.target.checked)}
+              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+            <span className="font-medium text-xs">Forçar 1 página estrita no PDF</span>
+          </label>
         </div>
       </div>
 
@@ -250,13 +366,58 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       />
 
       {/* Folha A4 Renderizada com o Template Ativo */}
-      <div className="flex justify-center overflow-x-auto py-4">
+      <div 
+        id="resume-canvas-wrapper" 
+        ref={pageContainerRef}
+        className={`resume-canvas-container relative flex justify-center overflow-x-auto py-4 ${forceOnePage ? 'print-force-one-page' : ''}`}
+      >
+        {/* Linha visual de quebra da página 1 se ultrapassar 1122.5px */}
+        {pageHeight > (A4_HEIGHT_PX + 4) && (
+          <div
+            className="no-print absolute left-0 right-0 z-30 pointer-events-none flex items-center justify-center border-b-2 border-dashed border-rose-400"
+            style={{ top: '1138.5px' }}
+          >
+            <span className="rounded-full bg-rose-50 border border-rose-200 px-3 py-0.5 text-[10.5px] font-bold text-rose-700 shadow-xs -mb-2.5">
+              ✂️ Fim da Página 1 (297mm A4) • O conteúdo abaixo entrará na página 2
+            </span>
+          </div>
+        )}
+
+        {/* Linha visual de quebra da página 2 se ultrapassar 2245px */}
+        {pageHeight > (A4_HEIGHT_PX * 2 + 4) && (
+          <div
+            className="no-print absolute left-0 right-0 z-30 pointer-events-none flex items-center justify-center border-b-2 border-dashed border-rose-400"
+            style={{ top: '2261px' }}
+          >
+            <span className="rounded-full bg-rose-50 border border-rose-200 px-3 py-0.5 text-[10.5px] font-bold text-rose-700 shadow-xs -mb-2.5">
+              ✂️ Fim da Página 2 (594mm A4) • O conteúdo abaixo entrará na página 3
+            </span>
+          </div>
+        )}
+
         <TemplateRenderer
           content={resume.content}
           onUpdateContent={handleUpdateContent}
           isEditable={true}
+          density={density}
         />
       </div>
+
+      {/* Escala dinâmica para impressão garantindo 100% de enquadramento em 1 página A4 se forceOnePage estiver ativo */}
+      {forceOnePage && pageHeight > A4_HEIGHT_PX && (
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @media print {
+                .a4-page {
+                  transform: scale(${Math.min(1, A4_HEIGHT_PX / pageHeight).toFixed(4)}) !important;
+                  transform-origin: top center !important;
+                }
+              }
+            `,
+          }}
+        />
+      )}
     </div>
   );
 }

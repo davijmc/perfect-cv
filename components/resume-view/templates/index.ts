@@ -6,10 +6,13 @@ import { TechCharcoalTemplate } from './tech-charcoal';
 import { ClassicSerifTemplate } from './classic-serif';
 import { NordicWarmTemplate } from './nordic-warm';
 
+export type TemplateDensity = 'compact' | 'normal' | 'comfortable';
+
 export interface TemplateComponentProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
+  density?: TemplateDensity;
 }
 
 export interface TemplateDefinition {

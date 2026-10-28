@@ -25,30 +25,60 @@ body {
 
 /* Regras de impressão para PDF perfeito */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
   body {
-    background: transparent !important;
+    background: white !important;
     color: black !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* Oculta qualquer elemento decorativo ou interface */
   .no-print {
     display: none !important;
   }
 
+  /* Zera margens e paddings de containers pais para não somar altura à folha */
+  main,
+  #resume-canvas-wrapper,
+  .resume-canvas-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 210mm !important;
+  }
+
+  /* Folha A4 em modo de impressão */
   .a4-page {
     width: 210mm !important;
+    max-width: 210mm !important;
     min-height: 297mm !important;
     box-shadow: none !important;
     margin: 0 !important;
-    padding: 12mm 15mm !important;
     border: none !important;
-    page-break-after: always;
+    box-sizing: border-box;
+    break-after: auto !important;
+    page-break-after: auto !important;
   }
 
-  @page {
-    size: A4;
-    margin: 0;
+  /* Quando ativado o travamento de 1 página estrita no PDF */
+  .print-force-one-page,
+  .print-force-one-page .a4-page {
+    max-height: 297mm !important;
+    height: 297mm !important;
+    overflow: hidden !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
 
   * {
