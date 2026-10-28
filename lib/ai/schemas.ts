@@ -176,7 +176,7 @@ export type JobRequirementItem = z.infer<typeof JobRequirementItemSchema>;
 
 export const JobAnalysisResultSchema = z.object({
   jobTitle: z.string().default(''),
-  company: z.string().optional().default(''),
+  company: z.string().optional(),
   summary: z.string().default(''),
   requirements: z.array(JobRequirementItemSchema).default([]),
   matchPercentage: z.number().min(0).max(100).default(0),
