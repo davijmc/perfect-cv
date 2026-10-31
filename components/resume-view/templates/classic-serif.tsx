@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@/lib/ai/schemas';
+import { UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 import { TemplateDensity } from './index';
-import { cleanUrlDisplay, createProfileUpdaters } from './template-helpers';
+import { cleanUrlDisplay, createProfileUpdaters, getTemplateLabels } from './template-helpers';
 
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
   density?: TemplateDensity;
+  language?: ResumeLanguage;
 }
 
 export function ClassicSerifTemplate({
@@ -18,9 +19,11 @@ export function ClassicSerifTemplate({
   onUpdateContent,
   isEditable = true,
   density = 'normal',
+  language = 'pt',
 }: TemplateProps) {
   const p = content.personalInfo;
   const u = createProfileUpdaters(content, onUpdateContent);
+  const labels = getTemplateLabels(language);
 
   const isCompact = density === 'compact';
   const isComfortable = density === 'comfortable';
@@ -117,7 +120,7 @@ export function ClassicSerifTemplate({
               isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-1.5'
             } text-center`}
           >
-            Resumo Profissional
+            {labels.summary}
           </h2>
           <InlineText
             as="p"
@@ -137,7 +140,7 @@ export function ClassicSerifTemplate({
               isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-1.5'
             } text-center`}
           >
-            Principais Resultados
+            {labels.keyResults}
           </h2>
           <ul className={`list-disc list-outside ml-4 text-stone-800 ${bulletSpacing}`}>
             {content.keyResults.map((r, idx) => (
@@ -157,7 +160,7 @@ export function ClassicSerifTemplate({
               isCompact ? 'pb-0.5 mb-1.5' : 'pb-1 mb-2.5'
             } text-center`}
           >
-            Experiência Profissional
+            {labels.experience}
           </h2>
 
           <div className={isCompact ? 'space-y-2' : 'space-y-3.5'}>
@@ -179,7 +182,7 @@ export function ClassicSerifTemplate({
                     />{' '}
                     –{' '}
                     <InlineText
-                      value={exp.isCurrent ? 'Presente' : exp.endDate}
+                      value={exp.isCurrent ? labels.present : exp.endDate}
                       onChange={(v) => u.updateExperienceField(expIdx, 'endDate', v)}
                       isEditable={isEditable}
                     />
@@ -218,7 +221,7 @@ export function ClassicSerifTemplate({
 
                 {exp.technologies?.length > 0 && (
                   <div className="mt-0.5 text-[10.5px] font-sans text-stone-600">
-                    <strong className="text-stone-800">Tecnologias: </strong>
+                    <strong className="text-stone-800">{labels.technologies}: </strong>
                     <InlineText
                       value={exp.technologies.join(', ')}
                       onChange={(v) => u.updateExperienceTechs(expIdx, v)}
@@ -240,7 +243,7 @@ export function ClassicSerifTemplate({
               isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-1.5'
             } text-center`}
           >
-            Projetos Relevantes
+            {labels.projects}
           </h2>
           <div className="space-y-1.5">
             {content.projects.map((proj, pIdx) => (
@@ -284,7 +287,7 @@ export function ClassicSerifTemplate({
               isCompact ? 'pb-0.5 mb-1' : 'pb-1 mb-1.5'
             } text-center`}
           >
-            Formação Acadêmica
+            {labels.education}
           </h2>
 
           <div className={isCompact ? 'space-y-1' : 'space-y-1.5'}>
@@ -304,7 +307,7 @@ export function ClassicSerifTemplate({
                     onChange={(v) => u.updateEducationField(idx, 'degree', v)}
                     isEditable={isEditable}
                   />{' '}
-                  em{' '}
+                  {labels.inPreposition}{' '}
                   <InlineText
                     value={edu.fieldOfStudy}
                     onChange={(v) => u.updateEducationField(idx, 'fieldOfStudy', v)}
@@ -327,13 +330,13 @@ export function ClassicSerifTemplate({
       {/* Competências, Idiomas e Certificações */}
       <section>
         <h2 className="text-[11px] font-sans font-bold uppercase tracking-widest text-stone-900 border-b border-stone-300 pb-1 mb-1.5 text-center">
-          Competências & Qualificações
+          {labels.skillsAndQualifications}
         </h2>
 
         <div className="space-y-1 text-xs font-sans text-stone-800">
           {content.skills.technical?.length > 0 && (
             <div>
-              <strong className="text-stone-950">Competências Técnicas: </strong>
+              <strong className="text-stone-950">{labels.technicalSkillsFull}: </strong>
               <InlineText
                 value={content.skills.technical.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('technical', v)}
@@ -343,7 +346,7 @@ export function ClassicSerifTemplate({
           )}
           {content.skills.toolsAndCloud?.length > 0 && (
             <div>
-              <strong className="text-stone-950">Ferramentas & Cloud: </strong>
+              <strong className="text-stone-950">{labels.toolsAndCloud}: </strong>
               <InlineText
                 value={content.skills.toolsAndCloud.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('toolsAndCloud', v)}
@@ -353,7 +356,7 @@ export function ClassicSerifTemplate({
           )}
           {content.skills.softSkills?.length > 0 && (
             <div>
-              <strong className="text-stone-950">Competências Interpessoais: </strong>
+              <strong className="text-stone-950">{labels.softSkills}: </strong>
               <InlineText
                 value={content.skills.softSkills.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('softSkills', v)}
@@ -363,7 +366,7 @@ export function ClassicSerifTemplate({
           )}
           {content.languages?.length > 0 && (
             <div>
-              <strong className="text-stone-950">Idiomas: </strong>
+              <strong className="text-stone-950">{labels.languages}: </strong>
               {content.languages.map((l, idx) => (
                 <span key={l.id || idx}>
                   {idx > 0 && ', '}
@@ -385,7 +388,7 @@ export function ClassicSerifTemplate({
           )}
           {content.certifications?.length > 0 && (
             <div>
-              <strong className="text-stone-950">Certificações: </strong>
+              <strong className="text-stone-950">{labels.certifications}: </strong>
               {content.certifications.map((c, idx) => (
                 <span key={c.id || idx}>
                   {idx > 0 && ' • '}

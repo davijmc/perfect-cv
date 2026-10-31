@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@/lib/ai/schemas';
+import { UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 import { TemplateDensity } from './index';
-import { cleanUrlDisplay, createProfileUpdaters } from './template-helpers';
+import { cleanUrlDisplay, createProfileUpdaters, getTemplateLabels } from './template-helpers';
 
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
   density?: TemplateDensity;
+  language?: ResumeLanguage;
 }
 
 export function NordicWarmTemplate({
@@ -18,9 +19,11 @@ export function NordicWarmTemplate({
   onUpdateContent,
   isEditable = true,
   density = 'normal',
+  language = 'pt',
 }: TemplateProps) {
   const p = content.personalInfo;
   const u = createProfileUpdaters(content, onUpdateContent);
+  const labels = getTemplateLabels(language);
 
   const isCompact = density === 'compact';
   const isComfortable = density === 'comfortable';
@@ -109,7 +112,7 @@ export function NordicWarmTemplate({
       {content.summary && (
         <section className={sectionMargin}>
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#78716c] mb-1">
-            Resumo Profissional
+            {labels.summary}
           </h2>
           <InlineText
             as="p"
@@ -125,7 +128,7 @@ export function NordicWarmTemplate({
       {content.keyResults?.length > 0 && (
         <section className={sectionMargin}>
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#78716c] mb-1">
-            Principais Resultados
+            {labels.keyResults}
           </h2>
           <ul className={`list-disc list-outside ml-4 text-[#44403c] ${bulletSpacing}`}>
             {content.keyResults.map((r, idx) => (
@@ -145,7 +148,7 @@ export function NordicWarmTemplate({
               isCompact ? 'pb-0.5 mb-1.5' : 'pb-1 mb-3'
             }`}
           >
-            Experiência Profissional
+            {labels.experience}
           </h2>
 
           <div className={isCompact ? 'space-y-2' : 'space-y-3.5'}>
@@ -159,7 +162,7 @@ export function NordicWarmTemplate({
                       isEditable={isEditable}
                     />{' '}
                     <span className="font-normal text-[#78716c]">
-                      em{' '}
+                      {labels.atPreposition}{' '}
                       <InlineText
                         value={exp.company}
                         onChange={(v) => u.updateExperienceField(expIdx, 'company', v)}
@@ -185,7 +188,7 @@ export function NordicWarmTemplate({
                     />{' '}
                     —{' '}
                     <InlineText
-                      value={exp.isCurrent ? 'Presente' : exp.endDate}
+                      value={exp.isCurrent ? labels.present : exp.endDate}
                       onChange={(v) => u.updateExperienceField(expIdx, 'endDate', v)}
                       isEditable={isEditable}
                     />
@@ -206,7 +209,7 @@ export function NordicWarmTemplate({
 
                 {exp.technologies?.length > 0 && (
                   <div className="text-[10px] text-[#78716c] pt-0.5">
-                    <span className="font-semibold">Tecnologias: </span>
+                    <span className="font-semibold">{labels.technologies}: </span>
                     <InlineText
                       value={exp.technologies.join(', ')}
                       onChange={(v) => u.updateExperienceTechs(expIdx, v)}
@@ -224,7 +227,7 @@ export function NordicWarmTemplate({
       {content.projects?.length > 0 && (
         <section className={sectionMargin}>
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#78716c] border-b border-[#e7e5e4] pb-0.5 mb-1.5">
-            Projetos Relevantes
+            {labels.projects}
           </h2>
           <div className="space-y-1.5">
             {content.projects.map((proj, pIdx) => (
@@ -265,7 +268,7 @@ export function NordicWarmTemplate({
         {content.education.length > 0 && (
           <div>
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#78716c] mb-1.5">
-              Formação Acadêmica
+              {labels.education}
             </h2>
             <div className="space-y-1.5">
               {content.education.map((edu, idx) => (
@@ -276,7 +279,7 @@ export function NordicWarmTemplate({
                       onChange={(v) => u.updateEducationField(idx, 'degree', v)}
                       isEditable={isEditable}
                     />{' '}
-                    em{' '}
+                    {labels.inPreposition}{' '}
                     <InlineText
                       value={edu.fieldOfStudy}
                       onChange={(v) => u.updateEducationField(idx, 'fieldOfStudy', v)}
@@ -306,12 +309,12 @@ export function NordicWarmTemplate({
         <div className="space-y-2">
           <div>
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#78716c] mb-1">
-              Competências & Tecnologias
+              {labels.skillsAndTech}
             </h2>
             <div className="text-[11px] text-[#44403c] space-y-0.5">
               {content.skills.technical?.length > 0 && (
                 <div>
-                  <strong className="text-[#1c1917]">Técnicas: </strong>
+                  <strong className="text-[#1c1917]">{labels.technicalSkills}: </strong>
                   <InlineText
                     value={content.skills.technical.join(', ')}
                     onChange={(v) => u.updateSkillsCategory('technical', v)}
@@ -321,7 +324,7 @@ export function NordicWarmTemplate({
               )}
               {content.skills.toolsAndCloud?.length > 0 && (
                 <div>
-                  <strong className="text-[#1c1917]">Ferramentas: </strong>
+                  <strong className="text-[#1c1917]">{labels.toolsShort}: </strong>
                   <InlineText
                     value={content.skills.toolsAndCloud.join(', ')}
                     onChange={(v) => u.updateSkillsCategory('toolsAndCloud', v)}
@@ -331,7 +334,7 @@ export function NordicWarmTemplate({
               )}
               {content.skills.softSkills?.length > 0 && (
                 <div>
-                  <strong className="text-[#1c1917]">Interpessoais: </strong>
+                  <strong className="text-[#1c1917]">{labels.softSkillsShort}: </strong>
                   <InlineText
                     value={content.skills.softSkills.join(', ')}
                     onChange={(v) => u.updateSkillsCategory('softSkills', v)}
@@ -346,7 +349,7 @@ export function NordicWarmTemplate({
             <div className="text-[11px] text-[#44403c] space-y-0.5 pt-1 border-t border-[#e7e5e4]">
               {content.languages?.length > 0 && (
                 <div>
-                  <strong className="text-[#1c1917]">Idiomas: </strong>
+                  <strong className="text-[#1c1917]">{labels.languages}: </strong>
                   {content.languages.map((l, idx) => (
                     <span key={l.id || idx}>
                       {idx > 0 && ', '}
@@ -368,7 +371,7 @@ export function NordicWarmTemplate({
               )}
               {content.certifications?.length > 0 && (
                 <div>
-                  <strong className="text-[#1c1917]">Certificações: </strong>
+                  <strong className="text-[#1c1917]">{labels.certifications}: </strong>
                   {content.certifications.map((c, idx) => (
                     <span key={c.id || idx}>
                       {idx > 0 && ' • '}

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { TEMPLATE_CATALOG } from '../components/resume-view/templates';
+import { buildResumeMarkdown } from '../components/resume-view/templates/template-helpers';
 import { UserProfileSchema, UserProfile } from '../lib/ai/schemas';
 
 const fullProfile: UserProfile = UserProfileSchema.parse({
@@ -133,5 +134,38 @@ describe('Resume Template Catalog', () => {
       expect(html, `${id} deve usar cabeçalho Resumo Profissional`).toContain('Resumo Profissional');
       expect(html, `${id} deve usar cabeçalho Experiência Profissional`).toContain('Experiência Profissional');
     }
+  });
+
+  it('renders English ATS section headers across all 5 templates and Markdown when language is "en"', () => {
+    for (const [id, t] of Object.entries(TEMPLATE_CATALOG)) {
+      const Component = t.component;
+      const html = renderToStaticMarkup(
+        React.createElement(Component, {
+          content: {
+            ...fullProfile,
+            experiences: [{ ...fullProfile.experiences[0], isCurrent: true }],
+          },
+          language: 'en',
+          isEditable: false,
+        })
+      );
+
+      expect(html, `${id} should render Professional Summary`).toContain('Professional Summary');
+      expect(html, `${id} should render Key Achievements`).toContain('Key Achievements');
+      expect(html, `${id} should render Professional Experience`).toContain('Professional Experience');
+      expect(html, `${id} should render Relevant Projects`).toContain('Relevant Projects');
+      expect(html, `${id} should render Education`).toContain('Education');
+      expect(html, `${id} should render Present for current job`).toContain('Present');
+      expect(html, `${id} should not render Resumo Profissional when language is en`).not.toContain('Resumo Profissional');
+    }
+
+    const mdEn = buildResumeMarkdown(fullProfile, 'en');
+    expect(mdEn).toContain('## Professional Summary');
+    expect(mdEn).toContain('## Key Achievements');
+    expect(mdEn).toContain('## Professional Experience');
+    expect(mdEn).toContain('## Relevant Projects');
+    expect(mdEn).toContain('## Education');
+    expect(mdEn).toContain('## Skills & Technologies');
+    expect(mdEn).toContain('## Languages & Certifications');
   });
 });

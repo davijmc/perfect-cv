@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Printer, 
-  Copy, 
-  Download, 
-  Save, 
-  ArrowLeft, 
-  Check, 
+import {
+  Printer,
+  Copy,
+  Download,
+  Save,
+  ArrowLeft,
+  Check,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Globe,
 } from 'lucide-react';
-import { GeneratedResume, TemplateId, UserProfile } from '@/lib/ai/schemas';
+import { GeneratedResume, TemplateId, UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { evaluateAtsCompliance } from '@/lib/ai/ats-validator';
 import { TemplateCarousel } from './template-carousel';
 import { TEMPLATE_CATALOG, TemplateDensity } from './templates';
@@ -53,10 +54,11 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   }, [resume, density]);
 
   const estimatedPages = pageHeight > 0 ? Math.ceil(pageHeight / A4_HEIGHT_PX) : 1;
-  const isSinglePage = pageHeight > 0 && pageHeight <= (A4_HEIGHT_PX + 4);
+  const isSinglePage = pageHeight > 0 && pageHeight <= A4_HEIGHT_PX + 4;
   const fullnessPercentage = Math.min(100, Math.round((pageHeight / A4_HEIGHT_PX) * 100));
 
   const atsReport = evaluateAtsCompliance(resume);
+  const activeLanguage: ResumeLanguage = resume.language === 'en' ? 'en' : 'pt';
 
   const currentTemplate = TEMPLATE_CATALOG[resume.templateId] || TEMPLATE_CATALOG['modern-minimal'];
   const TemplateRenderer = currentTemplate.component;
@@ -65,6 +67,25 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     const updated: GeneratedResume = {
       ...resume,
       templateId,
+      updatedAt: new Date().toISOString(),
+    };
+    setResume(updated);
+
+    try {
+      await fetch(`/api/resumes/${resume.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+    } catch {
+      // Falha silenciosa em background
+    }
+  };
+
+  const handleChangeLanguage = async (language: ResumeLanguage) => {
+    const updated: GeneratedResume = {
+      ...resume,
+      language,
       updatedAt: new Date().toISOString(),
     };
     setResume(updated);
@@ -157,7 +178,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   };
 
   const handleCopyMarkdown = () => {
-    const md = buildResumeMarkdown(resume.content);
+    const md = buildResumeMarkdown(resume.content, activeLanguage);
     navigator.clipboard.writeText(md);
     setCopiedMd(true);
     setTimeout(() => setCopiedMd(false), 3000);
@@ -188,6 +209,8 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
                 <span className="capitalize">Modo: {resume.mode}</span>
                 <span>•</span>
                 <span className="capitalize">Profundidade: {resume.depth}</span>
+                <span>•</span>
+                <span>Idioma: {activeLanguage === 'en' ? 'Inglês (EN-US)' : 'Português (PT-BR)'}</span>
                 {resume.createdAt && (
                   <>
                     <span>•</span>
@@ -323,6 +346,34 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
                 Confortável
               </button>
             </div>
+
+            {/* Seletor de Idioma dos Cabeçalhos */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <Globe className="ml-2 h-3.5 w-3.5 text-slate-500" />
+              <span className="px-1 text-[11px] font-semibold text-slate-500">Cabeçalhos:</span>
+              <button
+                type="button"
+                onClick={() => handleChangeLanguage('pt')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  activeLanguage === 'pt'
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                PT-BR
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChangeLanguage('en')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  activeLanguage === 'en'
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                EN-US
+              </button>
+            </div>
           </div>
 
           {/* Opção de travar 1 página estrita no PDF */}
@@ -401,6 +452,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
           onUpdateContent={handleUpdateContent}
           isEditable={true}
           density={density}
+          language={activeLanguage}
         />
       </div>
 

@@ -2,22 +2,25 @@ import { NextResponse } from 'next/server';
 import { generateObject } from 'ai';
 import { loadConfig, loadProfile, saveResume } from '@/lib/storage/fs-storage';
 import { getAIModelInstance } from '@/lib/ai/client';
-import { 
-  UserProfileSchema, 
-  GeneratedResume, 
-  TemplateIdEnum
+import {
+  UserProfileSchema,
+  GeneratedResume,
+  TemplateIdEnum,
+  ResumeLanguageEnum,
+  ResumeLanguage,
 } from '@/lib/ai/schemas';
-import { 
-  RESUME_GENERATOR_SYSTEM_PROMPT, 
-  buildGenerateResumeUserPrompt
+import {
+  RESUME_GENERATOR_SYSTEM_PROMPT,
+  buildGenerateResumeUserPrompt,
 } from '@/lib/ai/prompts';
 import { findUnsourcedClaims } from '@/lib/ai/number-guard';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { mode, depth, targetRole, targetJobDetails, templateId, assistantLevel, jobAnalysis } = body;
+    const { mode, depth, language, targetRole, targetJobDetails, templateId, assistantLevel, jobAnalysis } = body;
     const level: 'simple' | 'advanced' = assistantLevel === 'simple' ? 'simple' : 'advanced';
+    const chosenLanguage: ResumeLanguage = ResumeLanguageEnum.safeParse(language).success ? language : 'pt';
 
     // 1. Carrega o perfil profissional mestre
     const masterProfile = await loadProfile();
@@ -25,7 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Seu perfil profissional ainda não foi preenchido. Acesse a aba "Meu Perfil" para cadastrar seus dados ou subir um currículo antigo.',
+          message:
+            'Seu perfil profissional ainda não foi preenchido. Acesse a aba "Meu Perfil" para cadastrar seus dados ou subir um currículo antigo.',
         },
         { status: 400 }
       );
@@ -53,6 +57,7 @@ export async function POST(request: Request) {
       profile: masterProfile,
       mode: mode || 'generic',
       depth: depth || 'lean',
+      language: chosenLanguage,
       targetRole,
       targetJobDetails,
       assistantLevel: level,
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
       return { ...object, keyResults: (object.keyResults ?? []).slice(0, 4) };
     };
 
-    let tailoredProfile = await generate(userPrompt);
+    const tailoredProfile = await generate(userPrompt);
     if (level === 'simple') {
       tailoredProfile.keyResults = [];
     }
@@ -78,13 +83,16 @@ export async function POST(request: Request) {
     const unverifiedClaims = findUnsourcedClaims(tailoredProfile, masterProfile);
 
     // 5. Monta o título do currículo para o histórico
-    let title = 'Currículo Profissional';
+    const langPrefix = chosenLanguage === 'en' ? 'Resume' : 'Currículo';
+    let title = chosenLanguage === 'en' ? 'Professional Resume' : 'Currículo Profissional';
     if (mode === 'job_specific' && targetJobDetails?.jobTitle) {
-      title = `${targetJobDetails.jobTitle}${targetJobDetails.company ? ` - ${targetJobDetails.company}` : ''}`;
+      title = `${targetJobDetails.jobTitle}${targetJobDetails.company ? ` - ${targetJobDetails.company}` : ''}${
+        chosenLanguage === 'en' ? ' (EN)' : ''
+      }`;
     } else if (targetRole) {
-      title = `Currículo - ${targetRole}`;
+      title = `${langPrefix} - ${targetRole}`;
     } else {
-      title = `Currículo - ${masterProfile.personalInfo.title || 'Geral'}`;
+      title = `${langPrefix} - ${tailoredProfile.personalInfo.title || masterProfile.personalInfo.title || (chosenLanguage === 'en' ? 'General' : 'Geral')}`;
     }
 
     const chosenTemplate = TemplateIdEnum.safeParse(templateId).success
@@ -98,6 +106,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       title,
+      language: chosenLanguage,
       mode: mode || 'generic',
       depth: depth || 'lean',
       templateId: chosenTemplate,

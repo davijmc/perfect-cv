@@ -2,7 +2,7 @@
  * Prompts estruturados para extração de perfil, diagnóstico de vaga e geração de currículo otimizado para ATS
  */
 
-import type { JobAnalysisResult } from './schemas';
+import type { JobAnalysisResult, ResumeLanguage } from './schemas';
 
 export const JOB_ANALYZER_SYSTEM_PROMPT = `
 Você é um especialista em recrutamento executivo e engenharia de compatibilidade profissional baseada em evidências.
@@ -94,9 +94,9 @@ ADEQUAÇÃO TOTAL À VAGA E OTIMIZAÇÃO ATS
 
 SEJA ASSERTIVO (PADRÃO DE ESCRITA)
 - Estrutura de cada bullet: Verbo de Ação Forte no Passado + Entrega Técnica Específica (com termos da vaga) + Resultado/Impacto de Negócio.
-- Abra o primeiro bullet de cada experiência pelo resultado mais forte (desenvolveu, arquitetou, implementou, otimizou, reduziu, automatizou, liderou).
-- Proibido usar expressões passivas ou vagas como "responsável por", "participei de", "ajudei a" ou clichês vazios sem contexto.
-- Escreva em Português do Brasil impecável, sem pronomes pessoais, com texto limpo e 100% legível por sistemas ATS.
+- Abra o primeiro bullet de cada experiência pelo resultado mais forte (PT: desenvolveu, arquitetou, implementou, otimizou, reduziu, automatizou, liderou | EN: engineered, architected, implemented, optimized, reduced, automated, spearheaded).
+- Proibido usar expressões passivas ou vagas como "responsável por", "participei de", "ajudei a", "responsible for", "helped with" ou clichês vazios sem contexto.
+- Escreva estritamente no idioma solicitado nos Parâmetros de Geração (Português do Brasil ou Inglês Executivo Internacional), sem pronomes pessoais, com texto limpo e 100% legível por sistemas ATS.
 
 PROFUNDIDADE
 - lean (enxuto - 1 página A4):
@@ -115,6 +115,7 @@ export function buildGenerateResumeUserPrompt(params: {
   profile: any;
   mode: 'generic' | 'job_specific' | 'from_scratch';
   depth: 'lean' | 'detailed';
+  language?: ResumeLanguage;
   assistantLevel?: 'simple' | 'advanced';
   targetRole?: string;
   targetJobDetails?: {
@@ -125,13 +126,28 @@ export function buildGenerateResumeUserPrompt(params: {
   jobAnalysis?: JobAnalysisResult;
   today?: Date;
 }): string {
-  const { profile, mode, depth, assistantLevel = 'simple', targetRole, targetJobDetails, jobAnalysis, today = new Date() } = params;
+  const {
+    profile,
+    mode,
+    depth,
+    language = 'pt',
+    assistantLevel = 'simple',
+    targetRole,
+    targetJobDetails,
+    jobAnalysis,
+    today = new Date(),
+  } = params;
   const refMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
   let prompt = `Abaixo estão os dados do perfil profissional mestre do candidato (preserve empresas, datas, formação e contatos reais; adapte e enriqueça o conteúdo para posicioná-lo como o candidato perfeito):\n\n`;
   prompt += `\`\`\`json\n${JSON.stringify(profile, null, 2)}\n\`\`\`\n\n`;
 
   prompt += `Parâmetros de Geração:\n`;
+  prompt += `- Idioma de Saída Obrigatório: ${
+    language === 'en'
+      ? 'Inglês (en-US) — REDIGIR 100% DO CURRÍCULO EM INGLÊS EXECUTIVO INTERNACIONAL (traduza e adapte título profissional, resumo, keyResults, títulos de cargos nas experiências, bullets de conquistas com verbos de ação em inglês, descrição de projetos, graus/cursos acadêmicos mantendo o nome original da instituição, soft skills e nomes/níveis de idiomas como "Portuguese (Native)", "English (Fluent)")'
+      : 'Português do Brasil (pt-BR) — REDIGIR 100% DO CURRÍCULO EM PORTUGUÊS DO BRASIL (mantendo os termos técnicos de mercado consagrados em inglês quando aplicável)'
+  }\n`;
   prompt += `- Nível de Profundidade: ${depth === 'lean' ? 'SIMPLES / ENXUTO (OBJETIVO ESTRITO: 1 PÁGINA A4 - concisão máxima, 2 a 3 bullets por experiência, 2 a 3 keyResults, até 2 formações e projetos mais relevantes)' : 'DETALHADO / PROFUNDO (4 a 6 bullets por experiência, com contexto técnico completo, ferramentas e resultados)'}\n`;
   prompt += `- Modo: ${mode}\n`;
   prompt += `- Mês de referência para calcular anos de experiência: ${refMonth}\n`;

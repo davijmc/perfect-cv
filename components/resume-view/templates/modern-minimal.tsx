@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@/lib/ai/schemas';
+import { UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 import { TemplateDensity } from './index';
-import { cleanUrlDisplay, createProfileUpdaters } from './template-helpers';
+import { cleanUrlDisplay, createProfileUpdaters, getTemplateLabels } from './template-helpers';
 
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
   density?: TemplateDensity;
+  language?: ResumeLanguage;
 }
 
 export function ModernMinimalTemplate({
@@ -18,9 +19,11 @@ export function ModernMinimalTemplate({
   onUpdateContent,
   isEditable = true,
   density = 'normal',
+  language = 'pt',
 }: TemplateProps) {
   const p = content.personalInfo;
   const u = createProfileUpdaters(content, onUpdateContent);
+  const labels = getTemplateLabels(language);
 
   const isCompact = density === 'compact';
   const isComfortable = density === 'comfortable';
@@ -99,7 +102,7 @@ export function ModernMinimalTemplate({
       {content.summary && (
         <section className={sectionMargin}>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Resumo Profissional
+            {labels.summary}
           </h2>
           <InlineText
             as="p"
@@ -115,7 +118,7 @@ export function ModernMinimalTemplate({
       {content.keyResults?.length > 0 && (
         <section className={sectionMargin}>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Principais Resultados
+            {labels.keyResults}
           </h2>
           <ul className={`list-disc list-outside ml-4 text-slate-700 ${bulletSpacing}`}>
             {content.keyResults.map((r, idx) => (
@@ -131,7 +134,7 @@ export function ModernMinimalTemplate({
       {content.experiences.length > 0 && (
         <section className={sectionMargin}>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Experiência Profissional
+            {labels.experience}
           </h2>
 
           <div className={expSpacing}>
@@ -161,7 +164,7 @@ export function ModernMinimalTemplate({
                     />{' '}
                     —{' '}
                     <InlineText
-                      value={exp.isCurrent ? 'Presente' : exp.endDate}
+                      value={exp.isCurrent ? labels.present : exp.endDate}
                       onChange={(v) => u.updateExperienceField(expIdx, 'endDate', v)}
                       isEditable={isEditable}
                     />
@@ -192,7 +195,7 @@ export function ModernMinimalTemplate({
 
                 {exp.technologies && exp.technologies.length > 0 && (
                   <div className="mt-1 text-[10.5px] text-slate-500">
-                    <span className="font-semibold text-slate-600">Tecnologias: </span>
+                    <span className="font-semibold text-slate-600">{labels.technologies}: </span>
                     <InlineText
                       value={exp.technologies.join(', ')}
                       onChange={(v) => u.updateExperienceTechs(expIdx, v)}
@@ -210,7 +213,7 @@ export function ModernMinimalTemplate({
       {content.projects?.length > 0 && (
         <section className={sectionMargin}>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Projetos Relevantes
+            {labels.projects}
           </h2>
           <div className={isCompact ? 'space-y-1.5' : 'space-y-2'}>
             {content.projects.map((proj, pIdx) => (
@@ -250,7 +253,7 @@ export function ModernMinimalTemplate({
       {content.education.length > 0 && (
         <section className={sectionMargin}>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Formação Acadêmica
+            {labels.education}
           </h2>
 
           <div className={isCompact ? 'space-y-1' : 'space-y-2'}>
@@ -263,7 +266,7 @@ export function ModernMinimalTemplate({
                       onChange={(v) => u.updateEducationField(eduIdx, 'degree', v)}
                       isEditable={isEditable}
                     />{' '}
-                    em{' '}
+                    {labels.inPreposition}{' '}
                     <InlineText
                       value={edu.fieldOfStudy}
                       onChange={(v) => u.updateEducationField(eduIdx, 'fieldOfStudy', v)}
@@ -304,13 +307,13 @@ export function ModernMinimalTemplate({
       {/* Competências e Tecnologias */}
       <section className={sectionMargin}>
         <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-          Competências & Tecnologias
+          {labels.skillsAndTech}
         </h2>
 
         <div className={`space-y-0.5 ${isCompact ? 'text-[11px]' : 'text-xs'} text-slate-700`}>
           {content.skills.technical?.length > 0 && (
             <div>
-              <span className="font-bold text-slate-900">Técnicas: </span>
+              <span className="font-bold text-slate-900">{labels.technicalSkills}: </span>
               <InlineText
                 value={content.skills.technical.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('technical', v)}
@@ -320,7 +323,7 @@ export function ModernMinimalTemplate({
           )}
           {content.skills.toolsAndCloud?.length > 0 && (
             <div>
-              <span className="font-bold text-slate-900">Ferramentas & Cloud: </span>
+              <span className="font-bold text-slate-900">{labels.toolsAndCloud}: </span>
               <InlineText
                 value={content.skills.toolsAndCloud.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('toolsAndCloud', v)}
@@ -330,7 +333,7 @@ export function ModernMinimalTemplate({
           )}
           {content.skills.softSkills?.length > 0 && (
             <div>
-              <span className="font-bold text-slate-900">Competências Interpessoais: </span>
+              <span className="font-bold text-slate-900">{labels.softSkills}: </span>
               <InlineText
                 value={content.skills.softSkills.join(', ')}
                 onChange={(v) => u.updateSkillsCategory('softSkills', v)}
@@ -345,13 +348,13 @@ export function ModernMinimalTemplate({
       {(content.languages?.length > 0 || content.certifications?.length > 0) && (
         <section>
           <h2 className={`text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 ${sectionHeaderMb}`}>
-            Idiomas & Certificações
+            {labels.languagesAndCertifications}
           </h2>
 
           <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${isCompact ? 'text-[11px]' : 'text-xs'} text-slate-700`}>
             {content.languages?.length > 0 && (
               <div>
-                <span className="font-bold text-slate-900">Idiomas: </span>
+                <span className="font-bold text-slate-900">{labels.languages}: </span>
                 {content.languages.map((l, idx) => (
                   <span key={l.id || idx}>
                     {idx > 0 && ', '}
@@ -373,7 +376,7 @@ export function ModernMinimalTemplate({
             )}
             {content.certifications?.length > 0 && (
               <div>
-                <span className="font-bold text-slate-900">Certificações: </span>
+                <span className="font-bold text-slate-900">{labels.certifications}: </span>
                 {content.certifications.map((c, idx) => (
                   <span key={c.id || idx}>
                     {idx > 0 && ' • '}

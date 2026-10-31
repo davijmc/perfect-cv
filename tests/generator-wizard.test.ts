@@ -14,12 +14,14 @@ describe('GeneratorWizard Component', () => {
     expect(html).toContain('Gerar Currículo com Resultados');
   });
 
-  it('renderiza os objetivos do currículo e templates', () => {
+  it('renderiza os objetivos do currículo, opção de idioma (Português e Inglês) e templates', () => {
     const html = renderToStaticMarkup(
       React.createElement(GeneratorWizard, { onGenerated: () => {} })
     );
 
     expect(html).toContain('Específico para uma Vaga');
+    expect(html).toContain('Português (PT-BR)');
+    expect(html).toContain('Inglês (EN-US)');
     expect(html).toContain('Modern Minimal');
     expect(html).toContain('Executive Slate');
   });

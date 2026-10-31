@@ -1,16 +1,17 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@/lib/ai/schemas';
+import { UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { InlineText } from '../inline-text';
 import { TemplateDensity } from './index';
-import { cleanUrlDisplay, createProfileUpdaters } from './template-helpers';
+import { cleanUrlDisplay, createProfileUpdaters, getTemplateLabels } from './template-helpers';
 
 interface TemplateProps {
   content: UserProfile;
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
   density?: TemplateDensity;
+  language?: ResumeLanguage;
 }
 
 export function ExecutiveSlateTemplate({
@@ -18,9 +19,11 @@ export function ExecutiveSlateTemplate({
   onUpdateContent,
   isEditable = true,
   density = 'normal',
+  language = 'pt',
 }: TemplateProps) {
   const p = content.personalInfo;
   const u = createProfileUpdaters(content, onUpdateContent);
+  const labels = getTemplateLabels(language);
 
   const isCompact = density === 'compact';
   const isComfortable = density === 'comfortable';
@@ -50,7 +53,7 @@ export function ExecutiveSlateTemplate({
           {/* Contato */}
           <div className="space-y-1.5">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">
-              Contato
+              {labels.contact}
             </h2>
             <div className="space-y-1 text-[11px] text-slate-600 break-words">
               {p.email && (
@@ -101,11 +104,11 @@ export function ExecutiveSlateTemplate({
           {/* Competências e Tecnologias */}
           <div className="space-y-2">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">
-              Competências
+              {labels.skills}
             </h2>
             {content.skills.technical?.length > 0 && (
               <div className="text-[10.5px] text-slate-700">
-                <span className="font-bold text-slate-900 block mb-0.5">Técnicas:</span>
+                <span className="font-bold text-slate-900 block mb-0.5">{labels.technicalSkills}:</span>
                 <InlineText
                   value={content.skills.technical.join(', ')}
                   onChange={(v) => u.updateSkillsCategory('technical', v)}
@@ -115,7 +118,7 @@ export function ExecutiveSlateTemplate({
             )}
             {content.skills.toolsAndCloud?.length > 0 && (
               <div className="text-[10.5px] text-slate-700">
-                <span className="font-bold text-slate-900 block mb-0.5">Ferramentas & Cloud:</span>
+                <span className="font-bold text-slate-900 block mb-0.5">{labels.toolsAndCloud}:</span>
                 <InlineText
                   value={content.skills.toolsAndCloud.join(', ')}
                   onChange={(v) => u.updateSkillsCategory('toolsAndCloud', v)}
@@ -125,7 +128,7 @@ export function ExecutiveSlateTemplate({
             )}
             {content.skills.softSkills?.length > 0 && (
               <div className="text-[10.5px] text-slate-700">
-                <span className="font-bold text-slate-900 block mb-0.5">Interpessoais:</span>
+                <span className="font-bold text-slate-900 block mb-0.5">{labels.softSkillsShort}:</span>
                 <InlineText
                   value={content.skills.softSkills.join(', ')}
                   onChange={(v) => u.updateSkillsCategory('softSkills', v)}
@@ -139,7 +142,7 @@ export function ExecutiveSlateTemplate({
           {content.education.length > 0 && (
             <div className="space-y-1.5">
               <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">
-                Formação Acadêmica
+                {labels.education}
               </h2>
               <div className="space-y-2 text-[11px]">
                 {content.education.map((edu, idx) => (
@@ -182,7 +185,7 @@ export function ExecutiveSlateTemplate({
           {content.languages?.length > 0 && (
             <div className="space-y-1.5">
               <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">
-                Idiomas
+                {labels.languages}
               </h2>
               <div className="space-y-1 text-[11px] text-slate-700">
                 {content.languages.map((l, idx) => (
@@ -211,7 +214,7 @@ export function ExecutiveSlateTemplate({
           {content.certifications?.length > 0 && (
             <div className="space-y-1.5">
               <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-blue-200 pb-1">
-                Certificações
+                {labels.certifications}
               </h2>
               <div className="space-y-1.5 text-[10.5px] text-slate-700">
                 {content.certifications.map((c, idx) => (
@@ -256,7 +259,7 @@ export function ExecutiveSlateTemplate({
         {content.summary && (
           <section className="space-y-1">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
-              Resumo Profissional
+              {labels.summary}
             </h2>
             <InlineText
               as="p"
@@ -272,7 +275,7 @@ export function ExecutiveSlateTemplate({
         {content.keyResults?.length > 0 && (
           <section className="space-y-1">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
-              Principais Resultados
+              {labels.keyResults}
             </h2>
             <ul className="list-disc list-outside ml-4 space-y-1 text-xs text-slate-700">
               {content.keyResults.map((r, idx) => (
@@ -288,7 +291,7 @@ export function ExecutiveSlateTemplate({
         {content.experiences.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900 border-b border-slate-200 pb-1">
-              Experiência Profissional
+              {labels.experience}
             </h2>
 
             <div className={isCompact ? 'space-y-2.5' : 'space-y-3.5'}>
@@ -310,7 +313,7 @@ export function ExecutiveSlateTemplate({
                       />{' '}
                       —{' '}
                       <InlineText
-                        value={exp.isCurrent ? 'Presente' : exp.endDate}
+                        value={exp.isCurrent ? labels.present : exp.endDate}
                         onChange={(v) => u.updateExperienceField(expIdx, 'endDate', v)}
                         isEditable={isEditable}
                       />
@@ -348,7 +351,7 @@ export function ExecutiveSlateTemplate({
 
                   {exp.technologies?.length > 0 && (
                     <div className="text-[10.5px] text-slate-500 pt-0.5">
-                      <span className="font-semibold text-slate-600">Tecnologias: </span>
+                      <span className="font-semibold text-slate-600">{labels.technologies}: </span>
                       <InlineText
                         value={exp.technologies.join(', ')}
                         onChange={(v) => u.updateExperienceTechs(expIdx, v)}
@@ -366,7 +369,7 @@ export function ExecutiveSlateTemplate({
         {content.projects?.length > 0 && (
           <section className="space-y-2 pt-2 border-t border-slate-100">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-blue-900">
-              Projetos Relevantes
+              {labels.projects}
             </h2>
             <div className="space-y-2">
               {content.projects.map((proj, pIdx) => (

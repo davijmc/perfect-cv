@@ -151,6 +151,10 @@ export const UnverifiedClaimSchema = z.object({
 });
 export type UnverifiedClaim = z.infer<typeof UnverifiedClaimSchema>;
 
+// Idioma do Currículo Gerado
+export const ResumeLanguageEnum = z.enum(['pt', 'en']);
+export type ResumeLanguage = z.infer<typeof ResumeLanguageEnum>;
+
 // Os 5 IDs de Template do Carrossel Visual
 export const TemplateIdEnum = z.enum([
   'modern-minimal',
@@ -189,6 +193,7 @@ export const GeneratedResumeSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   title: z.string(),
+  language: ResumeLanguageEnum.default('pt'),
   assistantLevel: z.enum(['simple', 'advanced']).default('simple'),
   mode: z.enum(['generic', 'job_specific', 'from_scratch']).default('generic'),
   depth: z.enum(['lean', 'detailed']).default('lean'),

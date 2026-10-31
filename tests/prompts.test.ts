@@ -38,5 +38,18 @@ describe('buildGenerateResumeUserPrompt', () => {
     expect(prompt).toContain('Staff Data Scientist');
     expect(prompt).not.toContain('sempre com fatos do perfil');
     expect(prompt).toContain('personalInfo.title');
+    expect(prompt).toContain('Português do Brasil (pt-BR)');
+  });
+
+  it('instrui geração 100% em Inglês (en-US) quando language é "en"', () => {
+    const prompt = buildGenerateResumeUserPrompt({
+      profile: { summary: 'Engenheiro de Software' },
+      mode: 'job_specific',
+      depth: 'lean',
+      language: 'en',
+      targetJobDetails: { jobTitle: 'Senior Backend Engineer', rawDescription: 'Go and Kubernetes' },
+    });
+    expect(prompt).toContain('Inglês (en-US)');
+    expect(prompt).toContain('REDIGIR 100% DO CURRÍCULO EM INGLÊS');
   });
 });

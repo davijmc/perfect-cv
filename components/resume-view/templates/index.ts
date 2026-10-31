@@ -1,5 +1,5 @@
 import React from 'react';
-import { TemplateId, UserProfile } from '@/lib/ai/schemas';
+import { TemplateId, UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 import { ModernMinimalTemplate } from './modern-minimal';
 import { ExecutiveSlateTemplate } from './executive-slate';
 import { TechCharcoalTemplate } from './tech-charcoal';
@@ -13,6 +13,7 @@ export interface TemplateComponentProps {
   onUpdateContent?: (updated: UserProfile) => void;
   isEditable?: boolean;
   density?: TemplateDensity;
+  language?: ResumeLanguage;
 }
 
 export interface TemplateDefinition {

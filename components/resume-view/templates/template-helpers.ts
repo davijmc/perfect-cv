@@ -1,7 +1,89 @@
-import { UserProfile } from '@/lib/ai/schemas';
+import { UserProfile, ResumeLanguage } from '@/lib/ai/schemas';
 
 export function cleanUrlDisplay(url?: string): string {
   return (url || '').replace(/^https?:\/\//i, '').replace(/\/$/, '');
+}
+
+export interface TemplateLabels {
+  contact: string;
+  summary: string;
+  keyResults: string;
+  experience: string;
+  present: string;
+  atPreposition: string;
+  inPreposition: string;
+  technologies: string;
+  projects: string;
+  education: string;
+  skills: string;
+  skillsAndTech: string;
+  skillsAndQualifications: string;
+  technicalSkills: string;
+  technicalSkillsFull: string;
+  toolsAndCloud: string;
+  toolsShort: string;
+  softSkills: string;
+  softSkillsShort: string;
+  languages: string;
+  certifications: string;
+  languagesAndCertifications: string;
+  portfolio: string;
+}
+
+const PT_LABELS: TemplateLabels = {
+  contact: 'Contato',
+  summary: 'Resumo Profissional',
+  keyResults: 'Principais Resultados',
+  experience: 'Experiência Profissional',
+  present: 'Presente',
+  atPreposition: 'em',
+  inPreposition: 'em',
+  technologies: 'Tecnologias',
+  projects: 'Projetos Relevantes',
+  education: 'Formação Acadêmica',
+  skills: 'Competências',
+  skillsAndTech: 'Competências & Tecnologias',
+  skillsAndQualifications: 'Competências & Qualificações',
+  technicalSkills: 'Técnicas',
+  technicalSkillsFull: 'Competências Técnicas',
+  toolsAndCloud: 'Ferramentas & Cloud',
+  toolsShort: 'Ferramentas',
+  softSkills: 'Competências Interpessoais',
+  softSkillsShort: 'Interpessoais',
+  languages: 'Idiomas',
+  certifications: 'Certificações',
+  languagesAndCertifications: 'Idiomas & Certificações',
+  portfolio: 'Portfólio',
+};
+
+const EN_LABELS: TemplateLabels = {
+  contact: 'Contact',
+  summary: 'Professional Summary',
+  keyResults: 'Key Achievements',
+  experience: 'Professional Experience',
+  present: 'Present',
+  atPreposition: 'at',
+  inPreposition: 'in',
+  technologies: 'Technologies',
+  projects: 'Relevant Projects',
+  education: 'Education',
+  skills: 'Skills',
+  skillsAndTech: 'Skills & Technologies',
+  skillsAndQualifications: 'Skills & Qualifications',
+  technicalSkills: 'Technical',
+  technicalSkillsFull: 'Technical Skills',
+  toolsAndCloud: 'Tools & Cloud',
+  toolsShort: 'Tools',
+  softSkills: 'Soft Skills',
+  softSkillsShort: 'Soft Skills',
+  languages: 'Languages',
+  certifications: 'Certifications',
+  languagesAndCertifications: 'Languages & Certifications',
+  portfolio: 'Portfolio',
+};
+
+export function getTemplateLabels(language: ResumeLanguage = 'pt'): TemplateLabels {
+  return language === 'en' ? EN_LABELS : PT_LABELS;
 }
 
 export function createProfileUpdaters(
@@ -37,7 +119,7 @@ export function createProfileUpdaters(
           ? {
               ...e,
               [field]: val,
-              ...(field === 'endDate' ? { isCurrent: /presente|atual/i.test(val) } : {}),
+              ...(field === 'endDate' ? { isCurrent: /presente|atual|present|current/i.test(val) } : {}),
             }
           : e
       );
@@ -123,18 +205,19 @@ export function createProfileUpdaters(
   };
 }
 
+export function buildResumeMarkdown(c: UserProfile, language: ResumeLanguage = 'pt'): string {
+  const labels = getTemplateLabels(language);
 
-export function buildResumeMarkdown(c: UserProfile): string {
   let md = `# ${c.personalInfo.fullName}\n`;
   md += `**${c.personalInfo.title}**\n\n`;
   md += `* ${c.personalInfo.location || ''} | ${c.personalInfo.email || ''} | ${c.personalInfo.phone || ''}\n`;
   if (c.personalInfo.linkedinUrl) md += `* LinkedIn: ${c.personalInfo.linkedinUrl}\n`;
   if (c.personalInfo.githubUrl) md += `* GitHub: ${c.personalInfo.githubUrl}\n`;
-  if (c.personalInfo.portfolioUrl) md += `* Portfólio: ${c.personalInfo.portfolioUrl}\n`;
-  md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n`;
+  if (c.personalInfo.portfolioUrl) md += `* ${labels.portfolio}: ${c.personalInfo.portfolioUrl}\n`;
+  md += `\n---\n\n## ${labels.summary}\n${c.summary}\n\n`;
 
   if (c.keyResults?.length > 0) {
-    md += `## Principais Resultados\n`;
+    md += `## ${labels.keyResults}\n`;
     c.keyResults.forEach((r) => {
       md += `- ${r}\n`;
     });
@@ -142,21 +225,21 @@ export function buildResumeMarkdown(c: UserProfile): string {
   }
 
   if (c.experiences?.length > 0) {
-    md += `## Experiência Profissional\n`;
+    md += `## ${labels.experience}\n`;
     c.experiences.forEach((exp) => {
       md += `\n### ${exp.role} — ${exp.company}\n`;
-      md += `*${exp.startDate} - ${exp.isCurrent ? 'Presente' : exp.endDate}${exp.location ? ` | ${exp.location}` : ''}*\n\n`;
+      md += `*${exp.startDate} - ${exp.isCurrent ? labels.present : exp.endDate}${exp.location ? ` | ${exp.location}` : ''}*\n\n`;
       exp.highlights.forEach((h) => {
         md += `- ${h}\n`;
       });
       if (exp.technologies?.length > 0) {
-        md += `*Tecnologias:* ${exp.technologies.join(', ')}\n`;
+        md += `*${labels.technologies}:* ${exp.technologies.join(', ')}\n`;
       }
     });
   }
 
   if (c.projects?.length > 0) {
-    md += `\n## Projetos Relevantes\n`;
+    md += `\n## ${labels.projects}\n`;
     c.projects.forEach((proj) => {
       md += `- **${proj.name}**: ${proj.description}`;
       if (proj.technologies?.length > 0) {
@@ -167,9 +250,9 @@ export function buildResumeMarkdown(c: UserProfile): string {
   }
 
   if (c.education?.length > 0) {
-    md += `\n## Formação Acadêmica\n`;
+    md += `\n## ${labels.education}\n`;
     c.education.forEach((edu) => {
-      md += `- **${edu.degree} em ${edu.fieldOfStudy}** — ${edu.institution} (${edu.endDate})\n`;
+      md += `- **${edu.degree} ${labels.inPreposition} ${edu.fieldOfStudy}** — ${edu.institution} (${edu.endDate})\n`;
     });
   }
 
@@ -178,25 +261,25 @@ export function buildResumeMarkdown(c: UserProfile): string {
     c.skills?.toolsAndCloud?.length > 0 ||
     c.skills?.softSkills?.length > 0
   ) {
-    md += `\n## Competências & Tecnologias\n`;
+    md += `\n## ${labels.skillsAndTech}\n`;
     if (c.skills.technical?.length > 0) {
-      md += `- **Técnicas:** ${c.skills.technical.join(', ')}\n`;
+      md += `- **${labels.technicalSkills}:** ${c.skills.technical.join(', ')}\n`;
     }
     if (c.skills.toolsAndCloud?.length > 0) {
-      md += `- **Ferramentas & Cloud:** ${c.skills.toolsAndCloud.join(', ')}\n`;
+      md += `- **${labels.toolsAndCloud}:** ${c.skills.toolsAndCloud.join(', ')}\n`;
     }
     if (c.skills.softSkills?.length > 0) {
-      md += `- **Competências Interpessoais:** ${c.skills.softSkills.join(', ')}\n`;
+      md += `- **${labels.softSkills}:** ${c.skills.softSkills.join(', ')}\n`;
     }
   }
 
   if (c.languages?.length > 0 || c.certifications?.length > 0) {
-    md += `\n## Idiomas & Certificações\n`;
+    md += `\n## ${labels.languagesAndCertifications}\n`;
     if (c.languages?.length > 0) {
-      md += `- **Idiomas:** ${c.languages.map((l) => `${l.language} (${l.level})`).join(', ')}\n`;
+      md += `- **${labels.languages}:** ${c.languages.map((l) => `${l.language} (${l.level})`).join(', ')}\n`;
     }
     if (c.certifications?.length > 0) {
-      md += `- **Certificações:** ${c.certifications.map((cert) => `${cert.name}${cert.issuer ? ` - ${cert.issuer}` : ''}`).join(' • ')}\n`;
+      md += `- **${labels.certifications}:** ${c.certifications.map((cert) => `${cert.name}${cert.issuer ? ` - ${cert.issuer}` : ''}`).join(' • ')}\n`;
     }
   }
 

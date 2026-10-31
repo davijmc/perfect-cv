@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  Target, 
-  Briefcase, 
-  Layers, 
-  Zap, 
-  Link as LinkIcon, 
-  Loader2, 
-  ArrowRight, 
-  Check, 
-  AlertCircle
+import {
+  Sparkles,
+  Target,
+  Briefcase,
+  Layers,
+  Zap,
+  Link as LinkIcon,
+  Loader2,
+  ArrowRight,
+  Check,
+  AlertCircle,
+  Globe,
 } from 'lucide-react';
-import { TemplateId, JobAnalysisResult } from '@/lib/ai/schemas';
+import { TemplateId, JobAnalysisResult, ResumeLanguage } from '@/lib/ai/schemas';
 import { JobAnalysisCard } from './job-analysis-card';
 
 interface GeneratorWizardProps {
@@ -24,8 +25,9 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
   // Modo avançado único com resultados e diagnóstico
   const assistantLevel = 'advanced';
 
-  // Modo de objetivo, profundidade e template
+  // Modo de objetivo, idioma, profundidade e template
   const [mode, setMode] = useState<'generic' | 'job_specific' | 'from_scratch'>('job_specific');
+  const [language, setLanguage] = useState<ResumeLanguage>('pt');
   const [depth, setDepth] = useState<'lean' | 'detailed'>('lean');
   const [templateId, setTemplateId] = useState<TemplateId>('modern-minimal');
 
@@ -219,6 +221,7 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
 
       const payload = {
         mode,
+        language,
         depth,
         templateId,
         assistantLevel,
@@ -477,11 +480,72 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
         </section>
       )}
 
-      {/* 3. Nível de Profundidade */}
+      {/* 3. Idioma do Currículo */}
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">3</span>
+            <span>Em qual idioma o currículo deve ser gerado?</span>
+          </h2>
+          <p className="text-xs text-slate-600">
+            A IA traduzirá e adaptará automaticamente todo o texto, cargos, métricas e cabeçalhos ATS para o idioma escolhido.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Português (PT-BR) */}
+          <button
+            type="button"
+            onClick={() => setLanguage('pt')}
+            className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+              language === 'pt'
+                ? 'border-blue-600 bg-blue-50/60 shadow-md ring-2 ring-blue-500/20'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                <Globe className="h-3.5 w-3.5" />
+                <span>Brasil / Nacional</span>
+              </span>
+              {language === 'pt' && <Check className="h-4 w-4 text-blue-600" />}
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">Português (PT-BR)</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Redação executiva em Português do Brasil com cabeçalhos padrão ATS nacionais (Resumo Profissional, Experiência Profissional, Competências).
+            </p>
+          </button>
+
+          {/* Inglês (EN-US) */}
+          <button
+            type="button"
+            onClick={() => setLanguage('en')}
+            className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+              language === 'en'
+                ? 'border-blue-600 bg-blue-50/60 shadow-md ring-2 ring-blue-500/20'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-800">
+                <Globe className="h-3.5 w-3.5" />
+                <span>Global / Internacional</span>
+              </span>
+              {language === 'en' && <Check className="h-4 w-4 text-indigo-600" />}
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">Inglês (EN-US)</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Tradução e adaptação completa para Inglês Executivo Internacional (Professional Summary, Key Achievements, Professional Experience, Education).
+            </p>
+          </button>
+        </div>
+      </section>
+
+      {/* 4. Nível de Profundidade */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">4</span>
             <span>Qual o nível de profundidade das descrições?</span>
           </h2>
           <p className="text-xs text-slate-600">Escolha o nível de detalhe que a IA aplicará aos bullet points das suas experiências.</p>
@@ -534,11 +598,11 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
         </div>
       </section>
 
-      {/* 4. Estilo Visual Inicial */}
+      {/* 5. Estilo Visual Inicial */}
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">4</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">5</span>
             <span>Escolha o estilo de formatação inicial</span>
           </h2>
           <p className="text-xs text-slate-600">Você poderá alternar livremente entre os 5 estilos no carrossel de visualização.</p>
