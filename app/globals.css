@@ -71,11 +71,9 @@ body {
     page-break-after: auto !important;
   }
 
-  /* Quando ativado o travamento de 1 página estrita no PDF */
-  .print-force-one-page,
-  .print-force-one-page .a4-page {
+  /* Quando ativado o travamento de 1 página estrita no PDF, evita quebra de folha adicional */
+  .print-force-one-page {
     max-height: 297mm !important;
-    height: 297mm !important;
     overflow: hidden !important;
     break-after: avoid !important;
     page-break-after: avoid !important;

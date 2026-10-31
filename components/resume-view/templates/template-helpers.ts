@@ -122,3 +122,83 @@ export function createProfileUpdaters(
     },
   };
 }
+
+
+export function buildResumeMarkdown(c: UserProfile): string {
+  let md = `# ${c.personalInfo.fullName}\n`;
+  md += `**${c.personalInfo.title}**\n\n`;
+  md += `* ${c.personalInfo.location || ''} | ${c.personalInfo.email || ''} | ${c.personalInfo.phone || ''}\n`;
+  if (c.personalInfo.linkedinUrl) md += `* LinkedIn: ${c.personalInfo.linkedinUrl}\n`;
+  if (c.personalInfo.githubUrl) md += `* GitHub: ${c.personalInfo.githubUrl}\n`;
+  if (c.personalInfo.portfolioUrl) md += `* Portfólio: ${c.personalInfo.portfolioUrl}\n`;
+  md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n`;
+
+  if (c.keyResults?.length > 0) {
+    md += `## Principais Resultados\n`;
+    c.keyResults.forEach((r) => {
+      md += `- ${r}\n`;
+    });
+    md += `\n`;
+  }
+
+  if (c.experiences?.length > 0) {
+    md += `## Experiência Profissional\n`;
+    c.experiences.forEach((exp) => {
+      md += `\n### ${exp.role} — ${exp.company}\n`;
+      md += `*${exp.startDate} - ${exp.isCurrent ? 'Presente' : exp.endDate}${exp.location ? ` | ${exp.location}` : ''}*\n\n`;
+      exp.highlights.forEach((h) => {
+        md += `- ${h}\n`;
+      });
+      if (exp.technologies?.length > 0) {
+        md += `*Tecnologias:* ${exp.technologies.join(', ')}\n`;
+      }
+    });
+  }
+
+  if (c.projects?.length > 0) {
+    md += `\n## Projetos Relevantes\n`;
+    c.projects.forEach((proj) => {
+      md += `- **${proj.name}**: ${proj.description}`;
+      if (proj.technologies?.length > 0) {
+        md += ` (${proj.technologies.join(', ')})`;
+      }
+      md += `\n`;
+    });
+  }
+
+  if (c.education?.length > 0) {
+    md += `\n## Formação Acadêmica\n`;
+    c.education.forEach((edu) => {
+      md += `- **${edu.degree} em ${edu.fieldOfStudy}** — ${edu.institution} (${edu.endDate})\n`;
+    });
+  }
+
+  if (
+    c.skills?.technical?.length > 0 ||
+    c.skills?.toolsAndCloud?.length > 0 ||
+    c.skills?.softSkills?.length > 0
+  ) {
+    md += `\n## Competências & Tecnologias\n`;
+    if (c.skills.technical?.length > 0) {
+      md += `- **Técnicas:** ${c.skills.technical.join(', ')}\n`;
+    }
+    if (c.skills.toolsAndCloud?.length > 0) {
+      md += `- **Ferramentas & Cloud:** ${c.skills.toolsAndCloud.join(', ')}\n`;
+    }
+    if (c.skills.softSkills?.length > 0) {
+      md += `- **Competências Interpessoais:** ${c.skills.softSkills.join(', ')}\n`;
+    }
+  }
+
+  if (c.languages?.length > 0 || c.certifications?.length > 0) {
+    md += `\n## Idiomas & Certificações\n`;
+    if (c.languages?.length > 0) {
+      md += `- **Idiomas:** ${c.languages.map((l) => `${l.language} (${l.level})`).join(', ')}\n`;
+    }
+    if (c.certifications?.length > 0) {
+      md += `- **Certificações:** ${c.certifications.map((cert) => `${cert.name}${cert.issuer ? ` - ${cert.issuer}` : ''}`).join(' • ')}\n`;
+    }
+  }
+
+  return md;
+}

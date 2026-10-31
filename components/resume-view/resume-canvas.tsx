@@ -8,16 +8,16 @@ import {
   Save, 
   ArrowLeft, 
   Check, 
-  Sparkles, 
   Loader2,
-  FileText,
-  Sliders,
   AlertTriangle
 } from 'lucide-react';
 import { GeneratedResume, TemplateId, UserProfile } from '@/lib/ai/schemas';
+import { evaluateAtsCompliance } from '@/lib/ai/ats-validator';
 import { TemplateCarousel } from './template-carousel';
 import { TEMPLATE_CATALOG, TemplateDensity } from './templates';
+import { buildResumeMarkdown } from './templates/template-helpers';
 import { UnverifiedClaimsBanner } from './unverified-claims-banner';
+import { AtsChecklistPanel } from './ats-checklist-panel';
 
 interface ResumeCanvasProps {
   initialResume: GeneratedResume;
@@ -56,6 +56,8 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   const isSinglePage = pageHeight > 0 && pageHeight <= (A4_HEIGHT_PX + 4);
   const fullnessPercentage = Math.min(100, Math.round((pageHeight / A4_HEIGHT_PX) * 100));
 
+  const atsReport = evaluateAtsCompliance(resume);
+
   const currentTemplate = TEMPLATE_CATALOG[resume.templateId] || TEMPLATE_CATALOG['modern-minimal'];
   const TemplateRenderer = currentTemplate.component;
 
@@ -67,7 +69,6 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     };
     setResume(updated);
 
-    // Salva a preferência de template no disco em background
     try {
       await fetch(`/api/resumes/${resume.id}`, {
         method: 'PUT',
@@ -84,6 +85,21 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       ...resume,
       content: updatedContent,
       updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleAddMissingKeyword = (keyword: string) => {
+    const cleanKw = keyword.trim();
+    if (!cleanKw) return;
+    const currentTech = resume.content.skills.technical || [];
+    if (currentTech.some((s) => s.toLowerCase() === cleanKw.toLowerCase())) return;
+
+    handleUpdateContent({
+      ...resume.content,
+      skills: {
+        ...resume.content.skills,
+        technical: [...currentTech, cleanKw],
+      },
     });
   };
 
@@ -141,44 +157,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   };
 
   const handleCopyMarkdown = () => {
-    const c = resume.content;
-    let md = `# ${c.personalInfo.fullName}\n`;
-    md += `**${c.personalInfo.title}**\n\n`;
-    md += `* ${c.personalInfo.location || ''} | ${c.personalInfo.email || ''} | ${c.personalInfo.phone || ''}\n`;
-    if (c.personalInfo.linkedinUrl) md += `* LinkedIn: ${c.personalInfo.linkedinUrl}\n`;
-    if (c.personalInfo.githubUrl) md += `* GitHub: ${c.personalInfo.githubUrl}\n`;
-    md += `\n---\n\n## Resumo Profissional\n${c.summary}\n\n`;
-    if (c.keyResults?.length > 0) {
-      md += `## Principais Resultados\n`;
-      c.keyResults.forEach((r) => {
-        md += `- ${r}\n`;
-      });
-      md += `\n`;
-    }
-    md += `## Experiência Profissional\n`;
-
-    c.experiences.forEach((exp) => {
-      md += `\n### ${exp.role} — ${exp.company}\n`;
-      md += `*${exp.startDate} - ${exp.isCurrent ? 'Presente' : exp.endDate} | ${exp.location || ''}*\n\n`;
-      exp.highlights.forEach((h) => {
-        md += `- ${h}\n`;
-      });
-      if (exp.technologies?.length > 0) {
-        md += `*Tecnologias:* ${exp.technologies.join(', ')}\n`;
-      }
-    });
-
-    if (c.education.length > 0) {
-      md += `\n## Formação Acadêmica\n`;
-      c.education.forEach((edu) => {
-        md += `- **${edu.degree} em ${edu.fieldOfStudy}** — ${edu.institution} (${edu.endDate})\n`;
-      });
-    }
-
-    if (c.skills.technical?.length > 0) {
-      md += `\n## Competências Técnicas\n${c.skills.technical.join(', ')}\n`;
-    }
-
+    const md = buildResumeMarkdown(resume.content);
     navigator.clipboard.writeText(md);
     setCopiedMd(true);
     setTimeout(() => setCopiedMd(false), 3000);
@@ -212,11 +191,25 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
                 {resume.createdAt && (
                   <>
                     <span>•</span>
-                    <span>Gerado às {new Date(resume.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ({new Date(resume.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})</span>
+                    <span>
+                      Gerado às{' '}
+                      {new Date(resume.createdAt).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
+                      (
+                      {new Date(resume.createdAt).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      })}
+                      )
+                    </span>
                   </>
                 )}
                 <span>•</span>
-                <span className="font-semibold text-blue-600">Dica: clique em qualquer texto para editar</span>
+                <span className="font-semibold text-blue-600">
+                  Dica: clique em qualquer texto na folha abaixo para editar
+                </span>
               </div>
             </div>
           </div>
@@ -267,9 +260,8 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
         {/* Linha de Controle de Diagramação e Enquadramento A4 */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 text-xs">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Status da Página A4 */}
-            {pageHeight > 0 && (
-              isSinglePage ? (
+            {pageHeight > 0 &&
+              (isSinglePage ? (
                 <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-800">
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
                   <span>1 Página A4 perfeita ({fullnessPercentage}% preenchida)</span>
@@ -277,7 +269,9 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
               ) : (
                 <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  <span>Ocupando {estimatedPages} páginas ({Math.round((pageHeight / A4_HEIGHT_PX) * 100)}% de 1 folha)</span>
+                  <span>
+                    Ocupando {estimatedPages} páginas ({Math.round((pageHeight / A4_HEIGHT_PX) * 100)}% de 1 folha)
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
@@ -289,8 +283,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
                     Ajustar para 1 página
                   </button>
                 </div>
-              )
-            )}
+              ))}
 
             {/* Seletor de Densidade */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -352,7 +345,13 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
         </div>
       )}
 
-      {/* Banner de Números Não Verificados no Perfil */}
+      {/* Painel de Checklist e Pontuação ATS em Tempo Real */}
+      <AtsChecklistPanel
+        report={atsReport}
+        onAddMissingKeyword={handleAddMissingKeyword}
+      />
+
+      {/* Banner de Números Sugeridos pela IA para Revisão do Usuário */}
       <UnverifiedClaimsBanner
         claims={resume.unverifiedClaims || []}
         content={resume.content}
@@ -366,13 +365,15 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       />
 
       {/* Folha A4 Renderizada com o Template Ativo */}
-      <div 
-        id="resume-canvas-wrapper" 
+      <div
+        id="resume-canvas-wrapper"
         ref={pageContainerRef}
-        className={`resume-canvas-container relative flex justify-center overflow-x-auto py-4 ${forceOnePage ? 'print-force-one-page' : ''}`}
+        className={`resume-canvas-container relative flex justify-center overflow-x-auto py-4 ${
+          forceOnePage ? 'print-force-one-page' : ''
+        }`}
       >
         {/* Linha visual de quebra da página 1 se ultrapassar 1122.5px */}
-        {pageHeight > (A4_HEIGHT_PX + 4) && (
+        {pageHeight > A4_HEIGHT_PX + 4 && (
           <div
             className="no-print absolute left-0 right-0 z-30 pointer-events-none flex items-center justify-center border-b-2 border-dashed border-rose-400"
             style={{ top: '1138.5px' }}
@@ -384,7 +385,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
         )}
 
         {/* Linha visual de quebra da página 2 se ultrapassar 2245px */}
-        {pageHeight > (A4_HEIGHT_PX * 2 + 4) && (
+        {pageHeight > A4_HEIGHT_PX * 2 + 4 && (
           <div
             className="no-print absolute left-0 right-0 z-30 pointer-events-none flex items-center justify-center border-b-2 border-dashed border-rose-400"
             style={{ top: '2261px' }}
@@ -403,15 +404,14 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
         />
       </div>
 
-      {/* Escala dinâmica para impressão garantindo 100% de enquadramento em 1 página A4 se forceOnePage estiver ativo */}
+      {/* Escala dinâmica para impressão garantindo 100% de enquadramento em 1 página A4 sem cortar conteúdo */}
       {forceOnePage && pageHeight > A4_HEIGHT_PX && (
         <style
           dangerouslySetInnerHTML={{
             __html: `
               @media print {
                 .a4-page {
-                  transform: scale(${Math.min(1, A4_HEIGHT_PX / pageHeight).toFixed(4)}) !important;
-                  transform-origin: top center !important;
+                  zoom: ${Math.min(1, A4_HEIGHT_PX / pageHeight).toFixed(4)} !important;
                 }
               }
             `,
