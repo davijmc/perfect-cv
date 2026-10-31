@@ -5,13 +5,11 @@ import { getAIModelInstance } from '@/lib/ai/client';
 import { 
   UserProfileSchema, 
   GeneratedResume, 
-  GeneratedResumeSchema,
   TemplateIdEnum
 } from '@/lib/ai/schemas';
 import { 
   RESUME_GENERATOR_SYSTEM_PROMPT, 
-  buildGenerateResumeUserPrompt,
-  buildRetryFeedback
+  buildGenerateResumeUserPrompt
 } from '@/lib/ai/prompts';
 import { findUnsourcedClaims } from '@/lib/ai/number-guard';
 

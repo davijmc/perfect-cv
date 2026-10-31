@@ -7,15 +7,11 @@ import {
   Briefcase, 
   Layers, 
   Zap, 
-  FileText, 
   Link as LinkIcon, 
   Loader2, 
   ArrowRight, 
   Check, 
-  AlertCircle,
-  Palette,
-  ShieldCheck,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react';
 import { TemplateId, JobAnalysisResult } from '@/lib/ai/schemas';
 import { JobAnalysisCard } from './job-analysis-card';
@@ -96,12 +92,41 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
     setAnalyzeError(null);
 
     try {
+      let currentDescription = jobDescription.trim();
+      let currentRole = targetRole.trim();
+
+      // Auto-scrape caso o usuário tenha colado apenas a URL e clicado em Diagnosticar
+      if (!currentDescription && jobUrl.trim().startsWith('http')) {
+        const scrapeRes = await fetch('/api/scrape-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: jobUrl.trim() }),
+        });
+        const scrapeData = await scrapeRes.json();
+        if (scrapeData.success && scrapeData.data && !scrapeData.data.isProtected && scrapeData.data.description) {
+          currentDescription = scrapeData.data.description.trim();
+          setJobDescription(currentDescription);
+          if (scrapeData.data.title && !currentRole) {
+            currentRole = scrapeData.data.title;
+            setTargetRole(currentRole);
+          }
+        } else {
+          setAnalyzeError(
+            scrapeData.data?.message ||
+              scrapeData.message ||
+              'Não foi possível extrair a vaga do link automaticamente. Cole o texto da vaga abaixo.'
+          );
+          setIsAnalyzingJob(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/analyze-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rawDescription: jobDescription.trim(),
-          jobTitle: targetRole.trim() || undefined,
+          rawDescription: currentDescription,
+          jobTitle: currentRole || undefined,
           company: company.trim() || undefined,
           url: jobUrl.trim() || undefined,
         }),
@@ -131,23 +156,81 @@ export function GeneratorWizard({ onGenerated }: GeneratorWizardProps) {
     setIsGenerating(true);
     setGenerationError(null);
 
-    const activeAnalysis = customAnalysis !== undefined ? customAnalysis : jobAnalysis;
-
     try {
+      let currentDescription = jobDescription.trim();
+      let currentRole = targetRole.trim();
+      let currentCompany = company.trim();
+      let activeAnalysis = customAnalysis !== undefined ? customAnalysis : jobAnalysis;
+
+      if (mode === 'job_specific') {
+        // 1. Auto-scrape se o usuário colou apenas o link da vaga e clicou direto em Gerar
+        if (!currentDescription && jobUrl.trim().startsWith('http')) {
+          try {
+            const scrapeRes = await fetch('/api/scrape-job', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: jobUrl.trim() }),
+            });
+            const scrapeData = await scrapeRes.json();
+            if (scrapeData.success && scrapeData.data && !scrapeData.data.isProtected && scrapeData.data.description) {
+              currentDescription = scrapeData.data.description.trim();
+              setJobDescription(currentDescription);
+              if (scrapeData.data.title && !currentRole) {
+                currentRole = scrapeData.data.title;
+                setTargetRole(currentRole);
+              }
+            }
+          } catch {
+            // Continua se falhar o scraping automático
+          }
+        }
+
+        // 2. Auto-diagnóstico se o usuário clicou direto em Gerar sem ter diagnosticado a vaga antes
+        if (!activeAnalysis && currentDescription) {
+          try {
+            const analyzeRes = await fetch('/api/analyze-job', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rawDescription: currentDescription,
+                jobTitle: currentRole || undefined,
+                company: currentCompany || undefined,
+                url: jobUrl.trim() || undefined,
+              }),
+            });
+            const analyzeData = await analyzeRes.json();
+            if (analyzeData.success && analyzeData.analysis) {
+              activeAnalysis = analyzeData.analysis;
+              setJobAnalysis(analyzeData.analysis);
+              if (analyzeData.analysis.jobTitle && !currentRole) {
+                currentRole = analyzeData.analysis.jobTitle;
+                setTargetRole(currentRole);
+              }
+              if (analyzeData.analysis.company && !currentCompany) {
+                currentCompany = analyzeData.analysis.company;
+                setCompany(currentCompany);
+              }
+            }
+          } catch {
+            // Se falhar a pré-análise, prossegue com a descrição bruta
+          }
+        }
+      }
+
       const payload = {
         mode,
         depth,
         templateId,
         assistantLevel,
         jobAnalysis: assistantLevel === 'advanced' ? (activeAnalysis || undefined) : undefined,
-        targetRole: targetRole.trim() || undefined,
+        targetRole: currentRole || undefined,
         targetJobDetails:
           mode === 'job_specific'
             ? {
-                company: company.trim() || undefined,
-                jobTitle: targetRole.trim() || undefined,
+                company: currentCompany || undefined,
+                jobTitle: currentRole || undefined,
                 url: jobUrl.trim() || undefined,
-                rawDescription: jobDescription.trim() || undefined,
+                rawDescription: currentDescription || undefined,
               }
             : undefined,
       };
