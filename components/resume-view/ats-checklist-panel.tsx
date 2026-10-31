@@ -130,3 +130,4 @@ export function AtsChecklistPanel({ report, onAddMissingKeyword }: AtsChecklistP
     </div>
   );
 }
+

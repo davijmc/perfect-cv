@@ -91,3 +91,4 @@ describe('buildResumeMarkdown', () => {
     expect(md).toContain('Inglês (Avançado)');
   });
 });
+

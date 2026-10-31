@@ -231,3 +231,4 @@ export function evaluateAtsCompliance(resume: GeneratedResume): AtsValidationRep
     missingKeywords,
   };
 }
+
