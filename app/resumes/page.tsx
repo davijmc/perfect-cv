@@ -11,6 +11,7 @@ import {
   Clock,
   Trash2, 
   Copy, 
+  FileDown,
   ExternalLink, 
   Loader2, 
   AlertCircle,
@@ -23,6 +24,7 @@ export default function ResumesLibraryPage() {
   const [resumes, setResumes] = useState<GeneratedResume[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fetchResumes = async () => {
     try {
@@ -80,6 +82,45 @@ export default function ResumesLibraryPage() {
       }
     } catch (err: any) {
       alert('Erro ao duplicar: ' + err.message);
+    }
+  };
+
+  const handleDownloadPdf = async (cv: GeneratedResume) => {
+    setDownloadingId(cv.id);
+    try {
+      const res = await fetch('/api/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: cv.content,
+          templateId: cv.templateId,
+          density: cv.depth === 'lean' ? 'compact' : 'normal',
+          language: cv.language || 'pt',
+          forceOnePage: cv.depth === 'lean',
+          title: cv.title,
+        }),
+      });
+      if (!res.ok) throw new Error('Falha ao gerar PDF.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName =
+        cv.title
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || 'curriculo';
+      a.download = `${safeName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Erro ao baixar PDF: ' + err.message);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -208,12 +249,12 @@ export default function ResumesLibraryPage() {
                 </div>
 
                 {/* Ações do Card */}
-                <div className="pt-6 border-t border-slate-100 mt-6 flex items-center justify-between">
+                <div className="pt-6 border-t border-slate-100 mt-6 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleDuplicate(cv)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                       title="Duplicar currículo"
                     >
                       <Copy className="h-4 w-4" />
@@ -221,20 +262,37 @@ export default function ResumesLibraryPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(cv.id, cv.title)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                       title="Excluir currículo"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <Link
-                    href={`/generator?id=${cv.id}`}
-                    className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-all"
-                  >
-                    <span>Abrir & Exportar</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(cv)}
+                      disabled={downloadingId === cv.id}
+                      className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700 transition-all cursor-pointer disabled:opacity-50"
+                      title="Baixar PDF vetorial diretamente"
+                    >
+                      {downloadingId === cv.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="h-3.5 w-3.5" />
+                      )}
+                      <span>PDF</span>
+                    </button>
+
+                    <Link
+                      href={`/generator?id=${cv.id}`}
+                      className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-all"
+                    >
+                      <span>Abrir</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             );

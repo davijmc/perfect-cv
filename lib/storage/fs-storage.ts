@@ -111,12 +111,18 @@ export async function listResumes(): Promise<GeneratedResume[]> {
   }
 }
 
+function sanitizeResumeId(id: string): string {
+  return path.basename(String(id || '')).replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
 /**
  * Obtém um currículo específico por ID
  */
 export async function getResume(id: string): Promise<GeneratedResume | null> {
   await ensureDataDirs();
-  const filePath = path.join(getResumesDir(), `${id}.json`);
+  const safeId = sanitizeResumeId(id);
+  if (!safeId) return null;
+  const filePath = path.join(getResumesDir(), `${safeId}.json`);
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     return GeneratedResumeSchema.parse(JSON.parse(raw));
@@ -131,7 +137,9 @@ export async function getResume(id: string): Promise<GeneratedResume | null> {
 export async function saveResume(resume: GeneratedResume): Promise<void> {
   await ensureDataDirs();
   const valid = GeneratedResumeSchema.parse(resume);
-  const filePath = path.join(getResumesDir(), `${valid.id}.json`);
+  const safeId = sanitizeResumeId(valid.id);
+  if (!safeId) throw new Error('ID de currículo inválido.');
+  const filePath = path.join(getResumesDir(), `${safeId}.json`);
   await fs.writeFile(filePath, JSON.stringify(valid, null, 2), 'utf-8');
 }
 
@@ -140,7 +148,9 @@ export async function saveResume(resume: GeneratedResume): Promise<void> {
  */
 export async function deleteResume(id: string): Promise<boolean> {
   await ensureDataDirs();
-  const filePath = path.join(getResumesDir(), `${id}.json`);
+  const safeId = sanitizeResumeId(id);
+  if (!safeId) return false;
+  const filePath = path.join(getResumesDir(), `${safeId}.json`);
   try {
     await fs.unlink(filePath);
     return true;
@@ -150,31 +160,27 @@ export async function deleteResume(id: string): Promise<boolean> {
 }
 
 const PHOTO_PREFIX = 'profile-photo';
+const PHOTO_EXTENSIONS: { ext: string; mime: string }[] = [
+  { ext: '.png', mime: 'image/png' },
+  { ext: '.jpg', mime: 'image/jpeg' },
+  { ext: '.jpeg', mime: 'image/jpeg' },
+  { ext: '.webp', mime: 'image/webp' },
+  { ext: '.gif', mime: 'image/gif' },
+];
 
 /**
  * Salva a foto de perfil facultativa do usuário na pasta data/
  */
 export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promise<string> {
   await ensureDataDirs();
-  // Limpa arquivos de fotos anteriores com outras extensões
-  try {
-    const existing = await fs.readdir(getDataDir());
-    for (const f of existing) {
-      if (f.startsWith(PHOTO_PREFIX)) {
-        await fs.unlink(path.join(getDataDir(), f));
-      }
-    }
-  } catch {
-    // Ignora se não conseguir ler diretório
-  }
+  await deleteProfilePhoto();
 
   let ext = '.png';
   if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = '.jpg';
   else if (mimeType.includes('webp')) ext = '.webp';
   else if (mimeType.includes('gif')) ext = '.gif';
 
-  const fileName = `${PHOTO_PREFIX}${ext}`;
-  const filePath = path.join(getDataDir(), fileName);
+  const filePath = path.join(getDataDir(), `${PHOTO_PREFIX}${ext}`);
   await fs.writeFile(filePath, buffer);
   return `/api/profile/photo?t=${Date.now()}`;
 }
@@ -184,23 +190,16 @@ export async function saveProfilePhoto(buffer: Buffer, mimeType: string): Promis
  */
 export async function getProfilePhoto(): Promise<{ buffer: Buffer; mimeType: string } | null> {
   await ensureDataDirs();
-  try {
-    const existing = await fs.readdir(getDataDir());
-    const photoFile = existing.find((f) => f.startsWith(PHOTO_PREFIX));
-    if (!photoFile) return null;
-
-    const filePath = path.join(getDataDir(), photoFile);
-    const buffer = await fs.readFile(filePath);
-
-    let mimeType = 'image/png';
-    if (photoFile.endsWith('.jpg') || photoFile.endsWith('.jpeg')) mimeType = 'image/jpeg';
-    else if (photoFile.endsWith('.webp')) mimeType = 'image/webp';
-    else if (photoFile.endsWith('.gif')) mimeType = 'image/gif';
-
-    return { buffer, mimeType };
-  } catch {
-    return null;
+  for (const item of PHOTO_EXTENSIONS) {
+    try {
+      const filePath = path.join(getDataDir(), `${PHOTO_PREFIX}${item.ext}`);
+      const buffer = await fs.readFile(filePath);
+      return { buffer, mimeType: item.mime };
+    } catch {
+      // Tenta próxima extensão
+    }
   }
+  return null;
 }
 
 /**
@@ -208,15 +207,12 @@ export async function getProfilePhoto(): Promise<{ buffer: Buffer; mimeType: str
  */
 export async function deleteProfilePhoto(): Promise<void> {
   await ensureDataDirs();
-  try {
-    const existing = await fs.readdir(getDataDir());
-    for (const f of existing) {
-      if (f.startsWith(PHOTO_PREFIX)) {
-        await fs.unlink(path.join(getDataDir(), f));
-      }
+  for (const item of PHOTO_EXTENSIONS) {
+    try {
+      await fs.unlink(path.join(getDataDir(), `${PHOTO_PREFIX}${item.ext}`));
+    } catch {
+      // Ignora se arquivo não existir
     }
-  } catch {
-    // Ignora erro se não existir
   }
 }
 

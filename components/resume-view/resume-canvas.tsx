@@ -5,6 +5,7 @@ import {
   Printer,
   Copy,
   Download,
+  FileDown,
   Save,
   ArrowLeft,
   Check,
@@ -30,6 +31,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   const [density, setDensity] = useState<TemplateDensity>(initialResume.depth === 'lean' ? 'compact' : 'normal');
   const [forceOnePage, setForceOnePage] = useState(initialResume.depth === 'lean');
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
 
@@ -63,16 +65,9 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
   const currentTemplate = TEMPLATE_CATALOG[resume.templateId] || TEMPLATE_CATALOG['modern-minimal'];
   const TemplateRenderer = currentTemplate.component;
 
-  const handleSelectTemplate = async (templateId: TemplateId) => {
-    const updated: GeneratedResume = {
-      ...resume,
-      templateId,
-      updatedAt: new Date().toISOString(),
-    };
-    setResume(updated);
-
+  const persistResumeInBackground = async (updated: GeneratedResume) => {
     try {
-      await fetch(`/api/resumes/${resume.id}`, {
+      await fetch(`/api/resumes/${updated.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),
@@ -80,6 +75,16 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
     } catch {
       // Falha silenciosa em background
     }
+  };
+
+  const handleSelectTemplate = async (templateId: TemplateId) => {
+    const updated: GeneratedResume = {
+      ...resume,
+      templateId,
+      updatedAt: new Date().toISOString(),
+    };
+    setResume(updated);
+    await persistResumeInBackground(updated);
   };
 
   const handleChangeLanguage = async (language: ResumeLanguage) => {
@@ -89,24 +94,17 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       updatedAt: new Date().toISOString(),
     };
     setResume(updated);
-
-    try {
-      await fetch(`/api/resumes/${resume.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
-    } catch {
-      // Falha silenciosa em background
-    }
+    await persistResumeInBackground(updated);
   };
 
   const handleUpdateContent = (updatedContent: UserProfile) => {
-    setResume({
+    const updated: GeneratedResume = {
       ...resume,
       content: updatedContent,
       updatedAt: new Date().toISOString(),
-    });
+    };
+    setResume(updated);
+    void persistResumeInBackground(updated);
   };
 
   const handleAddMissingKeyword = (keyword: string) => {
@@ -152,14 +150,50 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
       updatedAt: new Date().toISOString(),
     };
     setResume(updated);
+    await persistResumeInBackground(updated);
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsExportingPdf(true);
     try {
-      await fetch(`/api/resumes/${resume.id}`, {
-        method: 'PUT',
+      const res = await fetch('/api/pdf', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
+        body: JSON.stringify({
+          content: resume.content,
+          templateId: resume.templateId,
+          density,
+          language: activeLanguage,
+          forceOnePage,
+          title: resume.title,
+        }),
       });
-    } catch {
-      // Falha silenciosa em background
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.message || 'Erro ao gerar o PDF.');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName =
+        resume.title
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || 'curriculo';
+      a.download = `${safeName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Erro ao exportar PDF: ' + err.message);
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -231,7 +265,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
                 )}
                 <span>•</span>
                 <span className="font-semibold text-blue-600">
-                  Dica: clique em qualquer texto na folha abaixo para editar
+                  Dica: selecione qualquer texto para copiar ou clique sobre um campo para editar
                 </span>
               </div>
             </div>
@@ -260,6 +294,16 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
 
             <button
               type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              title="Imprimir folha diretamente na impressora"
+            >
+              <Printer className="h-4 w-4" />
+              <span>Imprimir</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleSave}
               disabled={isSaving}
               className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
@@ -270,12 +314,17 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
 
             <button
               type="button"
-              onClick={handlePrint}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all cursor-pointer"
-              title="Abrir diálogo de impressão e salvar como PDF"
+              onClick={handleDownloadPdf}
+              disabled={isExportingPdf}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+              title="Baixar arquivo PDF vetorial nativo com texto 100% selecionável e copiável (ATS-Ready)"
             >
-              <Printer className="h-4 w-4" />
-              <span>Exportar PDF</span>
+              {isExportingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              <span>{isExportingPdf ? 'Gerando PDF...' : 'Baixar PDF'}</span>
             </button>
           </div>
         </div>
@@ -384,7 +433,7 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
               onChange={(e) => setForceOnePage(e.target.checked)}
               className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
-            <span className="font-medium text-xs">Forçar 1 página estrita no PDF</span>
+            <span className="font-medium text-xs">Enquadrar em 1 página no PDF</span>
           </label>
         </div>
       </div>
@@ -455,21 +504,6 @@ export function ResumeCanvas({ initialResume, onBack }: ResumeCanvasProps) {
           language={activeLanguage}
         />
       </div>
-
-      {/* Escala dinâmica para impressão garantindo 100% de enquadramento em 1 página A4 sem cortar conteúdo */}
-      {forceOnePage && pageHeight > A4_HEIGHT_PX && (
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              @media print {
-                .a4-page {
-                  zoom: ${Math.min(1, A4_HEIGHT_PX / pageHeight).toFixed(4)} !important;
-                }
-              }
-            `,
-          }}
-        />
-      )}
     </div>
   );
 }

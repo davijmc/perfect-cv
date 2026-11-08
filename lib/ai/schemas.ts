@@ -20,14 +20,14 @@ export const ProviderConfigSchema = z.object({
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 
 export const ProvidersMapSchema = z.object({
-  gemini: ProviderConfigSchema.default({ apiKey: '', model: 'gemini-1.5-flash', baseUrl: '' }),
+  gemini: ProviderConfigSchema.default({ apiKey: '', model: 'gemini-3.8-flash', baseUrl: '' }),
   openai: ProviderConfigSchema.default({ apiKey: '', model: 'gpt-4o', baseUrl: '' }),
   anthropic: ProviderConfigSchema.default({ apiKey: '', model: 'claude-3-5-sonnet-latest', baseUrl: '' }),
   groq: ProviderConfigSchema.default({ apiKey: '', model: 'llama-3.3-70b-versatile', baseUrl: 'https://api.groq.com/openai/v1' }),
   ollama: ProviderConfigSchema.default({ apiKey: '', model: 'llama3.2', baseUrl: 'http://localhost:11434/v1' }),
   omniRoute: ProviderConfigSchema.default({ apiKey: '', model: '', baseUrl: 'https://openrouter.ai/api/v1' }),
 }).default({
-  gemini: { apiKey: '', model: 'gemini-1.5-flash', baseUrl: '' },
+  gemini: { apiKey: '', model: 'gemini-3.8-flash', baseUrl: '' },
   openai: { apiKey: '', model: 'gpt-4o', baseUrl: '' },
   anthropic: { apiKey: '', model: 'claude-3-5-sonnet-latest', baseUrl: '' },
   groq: { apiKey: '', model: 'llama-3.3-70b-versatile', baseUrl: 'https://api.groq.com/openai/v1' },
